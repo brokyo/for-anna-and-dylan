@@ -1,7 +1,6 @@
 <template>
 	<div>
 		<pre>Section {{lightId}}</pre>
-		<pre>{{activeEvent}}</pre>
 	</div>
 </template>
 
@@ -25,10 +24,10 @@ export default {
       },
       s: {
         in: 100,
-        out: 70,
+        out: 0,
       },
       l: {
-        in: 40,
+        in: 60,
         out: 0,
       },
       attack: {
@@ -113,37 +112,47 @@ export default {
     generateWave(){
       // Pick number of events in wave and create them
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)]
-      console.log(`system: ${this.lightId} wave events: ${eventCount}`)
+      // console.log(`system: ${this.lightId} wave events: ${eventCount}`)
+
       const waveRest = 2
       let maxDuration = 0
+      let eventArray = []
 
+      // Build Wave
       for(let i = 0; i < eventCount; i++){
         const event = this.generateEvent()
-        const eventLength = event.start + event.duration + event.release
+        eventArray.push(event)
 
-        if(eventLength > maxDuration) { maxDuration = eventLength }
-
-        // schedule event
-        this.scheduleEvent(event)
+        var eventDuration = event.start + event.duration + event.osc.release
+        if(eventDuration > maxDuration) { maxDuration = eventDuration}
       }
 
-      // Weird stringing thing because a string starting with a + in tone means
-      // this many seconds after the current time 
+      // Schedule Tone Events
+      eventArray.forEach(event => this.scheduleToneEvent(event))
+
+      // Schedule Hue Events
+      var hueEvent = this.mungeHueData(eventArray)
+      this.scheduleHueEvent(hueEvent)
+
+      console.log(eventArray)
+      console.log(hueEvent)
+
+      // Schedule next wave 
       if(this.active){
         this.Tone.Transport.schedule(time => {
           this.generateWave()
         }, '+' + String(maxDuration + waveRest))
+        // ^ plus string starting with + means 'this many seconds after when I was called'
       }
-
     },
     generateEvent() {
       // Event values
-      const nameNumber = Math.floor(Math.random() * this.names.length);
-      const octaveNumber = Math.floor(Math.random() * this.octaves.length);
+      const nameIndex = Math.floor(Math.random() * this.names.length);
+      const octaveIndex = Math.floor(Math.random() * this.octaves.length);
 
       // Osc params
-      const name = this.names[nameNumber];
-      const octave = this.octaves[octaveNumber];
+      const name = this.names[nameIndex];
+      const octave = this.octaves[octaveIndex];
       const note = name + octave;
       const attack = this.randomBetween(this.attack.min, this.attack.max);
       const release = this.randomBetween(this.release.min, this.release.max);
@@ -152,20 +161,45 @@ export default {
       const osc = this.createOsc(note, attack, release);
 
       // Light params
-      const hueShift = this.nameHueShiftOptions[nameNumber];
-      const octaveShift = this.octaveBrightnessShiftOptions[octaveNumber];
-      const lightShift = { h: hueShift, l: octaveShift };
+      const hueShift = this.nameHueShiftOptions[nameIndex];
+      const octaveShift = this.octaveBrightnessShiftOptions[octaveIndex];
 
       // Timing parameters
       const duration = (Math.random() * 9) + 3;
-      const start = (Math.random() * 3);
+      const start = (Math.random() * 5);
 
       return {
         osc,
         start,
         release,
         duration,
-        lightShift
+        nameIndex,
+        octaveIndex
+      }
+    },
+    mungeHueData(events) {
+      // Munge wave data
+      var hueIn = { begin: 0, duration: 0, h: this.h.in, s: this.s.in, l: this.l.in}
+      var hueOut = { begin: 0, duration: 0, h: this.h.out, s: this.s.out, l: this.l.out }
+  
+      let eventEnd
+      events.forEach(event => {
+        if ( event.start < hueIn.begin || hueIn.begin == 0 ) { 
+          hueIn.begin = event.start
+          hueIn.duration = event.osc.attack
+        }
+
+        eventEnd = event.start + event.duration
+        if ( eventEnd > hueOut.begin ) {
+          hueOut.begin = eventEnd
+          hueOut.duration = event.osc.release
+        }
+
+      })
+
+      return {
+        hueIn,
+        hueOut
       }
     },
     createOsc(note, attackTime, releaseTime) {
@@ -189,10 +223,8 @@ export default {
       ampEnv.collection = osc;
       return ampEnv;
     },
-    scheduleEvent(event) {
+    scheduleToneEvent(event) {
       this.scheduleOsc(event.osc, event.duration, event.start);
-      this.scheduleHueAttack(event.osc.attack, event.lightShift);
-      this.scheduleHueRelease(event.duration, event.release, event.lightShift);
       this.schedulePostEvent(event);
     },
     scheduleOsc(osc, eventDuration, eventStart) {
@@ -200,19 +232,21 @@ export default {
         osc.triggerAttackRelease(eventDuration);
       }, '+' + String(eventStart));
     },
-    scheduleHueAttack(attackLength, lightShift) {
-      this.Tone.Transport.schedule((time) => {
-        const shiftedH = this.h.in + lightShift.h;
-        const shiftedL = this.l.in + lightShift.l;
-        const lightIn = this.lightState.create().on().hsl(shiftedH, this.s.in, shiftedL).transition(attackLength * 1000);
-        this.hueApi.setLightState(this.lightId, lightIn);
-      });
+    scheduleHueEvent(event){
+      this.scheduleHueAttack(event.hueIn);
+      this.scheduleHueRelease(event.hueOut);
     },
-    scheduleHueRelease(releaseStart, releaseTime, lightShift) {
+    scheduleHueAttack(hueIn) {
       this.Tone.Transport.schedule((time) => {
-        const lightOut = this.lightState.create().off().transition(releaseTime * 1000);
-        this.hueApi.setLightState(this.lightId, lightOut);
-      }, + + String(releaseStart));
+        const lightInState = this.lightState.create().on().hsl(hueIn.h, hueIn.s, hueIn.l).transition(hueIn.duration * 1000);
+        this.hueApi.setLightState(this.lightId, lightInState);
+      }, ('+' + String(hueIn.begin)));
+    },
+    scheduleHueRelease(hueOut) {
+      this.Tone.Transport.schedule((time) => {
+        const lightOutState = this.lightState.create().hsl(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000).off();
+        this.hueApi.setLightState(this.lightId, lightOutState);
+      }, (`+` + String(hueOut.begin)));
     },
     schedulePostEvent(event) {
       this.Tone.Transport.schedule((time) => {
