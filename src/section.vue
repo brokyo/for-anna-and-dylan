@@ -15,9 +15,10 @@ export default {
       activeEvent: {},
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       nameHueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
-      partials: [0.15, 0, 0.03, 0, 0.025, 0.01, 0.025, 0, 0.025, 0, 0.03, 0, 0.035, 0, 0, 0.085, 0.07],
       octaves: ['2', '3', '4', '5'],
+      numEvents: ['1', '1', '3'],
       octaveBrightnessShiftOptions: [-2, 0, 2],
+      // Hue Config
       h: {
         in: 20,
         out: 0,
@@ -38,15 +39,36 @@ export default {
         max: 8,
         min: 3,
       },
+      // ToneJS Config
+      partials: [0.165, 0, 0.03, 0, 0.025, 0, 0.025, 0, 0.025, 0, 0.03, 0, 0.035, 0, 0, 0.085, 0.07],
+      tremolo: {
+        depth: 0.5, frequency: 10, spread: 180, type: 'sine', wet: 0.05,
+      },
+      vibrato: {
+        depth: 0.1, frequency: 5, maxDelay: 0.005, type: 'sine', wet: 0.1,
+      },
+      phaser: {
+        Q: 10, baseFrequency: 350, frequency: 0.5, octaves: 3, stages: 10, wet: 0,
+      },
+      feedbackDelay: { delayTime: 0.015, feedback: 0.5, wet: 0.05 },
+      chorus: {
+        delayTime: 3.5, depth: 0.7, feedback: 0.15, frequency: 1.5, spread: 180, type: 'sine', wet: 0.6,
+      },
+      EQ3: { high: 0, low: '-21', mid: '-12' },
+      reverb: { dampening: 3000, roomSize: 0 },
+      filter: {
+        Q: 0, active: true, frequency: 536, rolloff: -12, type: 'lowpass',
+      },
       // Tonejs Patch
-      tremolo: {},
-      vibrato: {},
-      phaser: {},
-      reverb: {},
-      feedbackDelay: {},
-      chorus: {},
-      eq3: {},
-      filter: {},
+      oscInNode: {},
+      tremoloNode: {},
+      vibratoNode: {},
+      phaserNode: {},
+      feedbackDelayNode: {},
+      chorusNode: {},
+      eq3Node: {},
+      filterNode: {},
+      reverbNode: {},
     };
   },
   methods: {
@@ -71,119 +93,81 @@ export default {
       this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(25, 0, 0));
     },
     createToneChain() {
-      this.tremolo = new this.Tone.Tremolo({
-        depth: 0.5,
-        frequency: 3,
-        spread: 180,
-        type: 'sine',
-        wet: 0.05,
-      });
 
-      this.vibrato = new this.Tone.Vibrato({
-        depth: 0.1,
-        frequency: 3,
-        maxDelay: 0.005,
-        type: 'sine',
-        wet: 0.1,
-      });
+      this.oscInNode = new this.Tone.Volume()
+      this.tremoloNode = new this.Tone.Tremolo(this.tremolo);
+      this.vibratoNode = new this.Tone.Vibrato(this.vibrato);
+      this.phaserNode = new this.Tone.Phaser(this.phaser);
+      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.feedbackDelay);
+      this.chorusNode = new this.Tone.Chorus(this.chorus);
+      this.eq3Node = new this.Tone.EQ3(this.EQ3);
+      this.filterNode = new this.Tone.Filter(this.filter);
+      this.reverbNode = new this.Tone.Freeverb(this.reverb);
 
-      this.phaser = new this.Tone.Phaser({
-        Q: 10,
-        baseFrequency: 300,
-        frequency: 0.5,
-        octaves: 3,
-        stages: 10,
-        wet: 0,
-      });
-
-      this.feedbackDelay = new this.Tone.FeedbackDelay({
-        delayTime: 0.2,
-        feedback: 0.5,
-        wet: 0.05,
-      });
-
-      this.chorus = new this.Tone.Chorus({
-        delayTime: 3.5,
-        depth: 0.4,
-        feedback: 0.15,
-        frequency: 1.5,
-        spread: 180,
-        type: 'sine',
-        wet: 0.6,
-      });
-
-      this.eq3 = new this.Tone.EQ3({
-        high: '-10',
-        low: '-14',
-        mid: '-5',
-      });
-
-      this.filter = new this.Tone.Filter({
-        Q: 0,
-        active: true,
-        frequency: 536,
-        rolloff: -12,
-        type: 'lowpass',
-      });
-
-      this.reverb = new this.Tone.Freeverb({
-        roomSize: 0.2,
-        dampening: 3000,
-      });
-
-      this.tremolo.chain(this.vibrato, this.phaser, this.feedbackDelay, this.chorus, this.eq3, this.filter, this.reverb, this.Tone.Master);
-      // this.reverb = new this.Tone.Freeverb()
+      this.oscInNode.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.chorusNode, this.eq3Node, this.reverbNode, this.filterNode, this.Tone.Master);
     },
     // CONTROL METHODS
     startSection() {
-      this.generateEvent();
+      this.generateWave();
     },
-    generateEvent(previousEventStart = 0, previousEventDuration = 0, previousEventRelease = 0) {
-      this.Tone.Transport.schedule((time) => {
-        // generated oscillator parameters
-        const nameNumber = Math.floor(Math.random() * this.names.length);
-        const name = this.names[nameNumber];
-        const hueShift = this.nameHueShiftOptions[nameNumber];
+    generateWave(){
+      // Pick number of events in wave and create them
+      const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)]
+      console.log(`system: ${this.lightId} wave events: ${eventCount}`)
+      const waveRest = 2
+      let maxDuration = 0
 
-        const octaveNumber = Math.floor(Math.random() * this.octaves.length);
-        const octave = this.octaves[octaveNumber];
-        const octaveShift = this.octaveBrightnessShiftOptions[octaveNumber];
+      for(let i = 0; i < eventCount; i++){
+        const event = this.generateEvent()
+        const eventLength = event.start + event.duration + event.release
 
-        const lightShift = {
-          h: hueShift,
-          l: octaveShift,
-        };
+        if(eventLength > maxDuration) { maxDuration = eventLength }
 
+        // schedule event
+        this.scheduleEvent(event)
+      }
 
-        const note = name + octave;
-        const attackTime = this.randomBetween(this.attack.min, this.attack.max);
-        const releaseTime = this.randomBetween(this.release.min, this.release.max);
+      // Weird stringing thing because a string starting with a + in tone means
+      // this many seconds after the current time 
+      if(this.active){
+        this.Tone.Transport.schedule(time => {
+          this.generateWave()
+        }, '+' + String(maxDuration + waveRest))
+      }
 
-        // Build oscillator
-        const osc = this.createOsc(note, attackTime, releaseTime);
-
-        // Generate event parameters
-        const previousEventEnd = previousEventStart + previousEventRelease + previousEventDuration;
-        const eventGap = (Math.random() * 19) + 2;
-        const eventStart = previousEventEnd + eventGap;
-        const eventDuration = (Math.random() * 9) + 3;
-
-
-        this.activeEvent = {
-          note,
-          duration: eventDuration,
-          attack: attackTime,
-          release: releaseTime,
-          hShift: lightShift.h,
-          lShift: lightShift.l,
-        };
-        // Schedule event
-        this.scheduleEvent(osc, eventStart, eventDuration, lightShift);
-      }, this.currentTime() + previousEventDuration + previousEventRelease);
     },
-    // Returns an oscillator connected to an amplitude envelope (think of it like
-    // a single key on a piano) that's built to play a certain sound for a certain
-    // duration
+    generateEvent() {
+      // Event values
+      const nameNumber = Math.floor(Math.random() * this.names.length);
+      const octaveNumber = Math.floor(Math.random() * this.octaves.length);
+
+      // Osc params
+      const name = this.names[nameNumber];
+      const octave = this.octaves[octaveNumber];
+      const note = name + octave;
+      const attack = this.randomBetween(this.attack.min, this.attack.max);
+      const release = this.randomBetween(this.release.min, this.release.max);
+
+      // Build oscillator
+      const osc = this.createOsc(note, attack, release);
+
+      // Light params
+      const hueShift = this.nameHueShiftOptions[nameNumber];
+      const octaveShift = this.octaveBrightnessShiftOptions[octaveNumber];
+      const lightShift = { h: hueShift, l: octaveShift };
+
+      // Timing parameters
+      const duration = (Math.random() * 9) + 3;
+      const start = (Math.random() * 3);
+
+      return {
+        osc,
+        start,
+        release,
+        duration,
+        lightShift
+      }
+    },
     createOsc(note, attackTime, releaseTime) {
       const osc = new this.Tone.OmniOscillator({
         frequency: note,
@@ -199,29 +183,22 @@ export default {
 
       osc.partials = this.partials;
       osc.connect(ampEnv).start();
-      ampEnv.chain(this.tremolo);
+      ampEnv.connect(this.oscInNode);
 
       // Dispose of ampenv
       ampEnv.collection = osc;
       return ampEnv;
     },
-    // Schedules a play event (oscillator firing and light changing)
-    scheduleEvent(osc, eventStart, eventDuration, lightShift) {
-      this.Tone.Transport.schedule((time) => {
-        this.scheduleOsc(osc, eventDuration);
-        this.scheduleHueAttack(osc.attack, lightShift);
-        this.scheduleHueRelease(eventDuration, osc.release, time, lightShift);
-        this.schedulePostEvent(osc, eventDuration, time);
-
-        if (this.active) {
-          this.generateEvent(eventStart, eventDuration, osc.release);
-        }
-      }, eventStart);
+    scheduleEvent(event) {
+      this.scheduleOsc(event.osc, event.duration, event.start);
+      this.scheduleHueAttack(event.osc.attack, event.lightShift);
+      this.scheduleHueRelease(event.duration, event.release, event.lightShift);
+      this.schedulePostEvent(event);
     },
-    scheduleOsc(osc, eventDuration) {
+    scheduleOsc(osc, eventDuration, eventStart) {
       this.Tone.Transport.schedule((time) => {
         osc.triggerAttackRelease(eventDuration);
-      });
+      }, '+' + String(eventStart));
     },
     scheduleHueAttack(attackLength, lightShift) {
       this.Tone.Transport.schedule((time) => {
@@ -231,25 +208,25 @@ export default {
         this.hueApi.setLightState(this.lightId, lightIn);
       });
     },
-    scheduleHueRelease(releaseStart, releaseTime, transportTime, lightShift) {
+    scheduleHueRelease(releaseStart, releaseTime, lightShift) {
       this.Tone.Transport.schedule((time) => {
         const lightOut = this.lightState.create().off().transition(releaseTime * 1000);
         this.hueApi.setLightState(this.lightId, lightOut);
-      }, transportTime + releaseStart);
+      }, + + String(releaseStart));
     },
-    schedulePostEvent(osc, eventDuration, transportTime) {
+    schedulePostEvent(event) {
       this.Tone.Transport.schedule((time) => {
-        osc.dispose();
-        osc.collection.dispose();
-      }, transportTime + eventDuration + osc.release);
+        event.osc.dispose();
+        event.osc.collection.dispose();
+      }, '+' + String(event.start + event.duration + event.release));
     },
   },
   mounted() {
-    // this.hueApi.lights().then(data => console.log(data))
-    // this.resetHue();
-    // this.createToneChain();
-    // this.startSection();
-    this.turnOffLights();
+    this.resetHue();
+    this.createToneChain();
+    this.startSection();
+    // this.turnOffLights();
+    // this.createOsc().triggerAttackRelease(2)
   },
 };
 
