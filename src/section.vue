@@ -14,6 +14,7 @@ export default {
       max: 9,
       min: 2
     }
+    this.startShift = 5
   },
   data() {
     return {
@@ -32,6 +33,10 @@ export default {
       release: {
         max: 3,
         min: 1,
+      },
+      volume: {
+        min: -25,
+        max: 0
       },
       // ToneJS Config
       partials: [0.5, 0.2, 0.03, 0, 0.2],
@@ -54,6 +59,7 @@ export default {
         Q: 0, active: true, frequency: 536, rolloff: -12, type: 'lowpass',
       },
       // Tonejs Patch
+      synth: {},
       oscInNode: {},
       tremoloNode: {},
       vibratoNode: {},
@@ -84,7 +90,8 @@ export default {
       this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.l.out));
     },
     createToneChain() {
-
+      this.synth = new this.Tone.PolySynth()
+      this.synth.set({ oscillator: { partials: this.partials }})
       this.oscInNode = new this.Tone.Volume()
       this.tremoloNode = new this.Tone.Tremolo(this.tremolo);
       this.vibratoNode = new this.Tone.Vibrato(this.vibrato);
@@ -95,35 +102,71 @@ export default {
       this.filterNode = new this.Tone.Filter(this.filter);
       this.reverbNode = new this.Tone.Freeverb(this.reverb);
 
-      this.oscInNode.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.chorusNode, this.eq3Node, this.reverbNode, this.filterNode, this.Tone.Master);
+      this.synth.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.chorusNode, this.eq3Node, this.reverbNode, this.filterNode, this.Tone.Master);
     },
     // CONTROL METHODS
     startSection() {
       this.generateWave();
     },
     generateWave(){
-      // Pick number of events in wave and create them
+      // Set wave vars
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)]
-
       const waveRest = (Math.random() * this.waveRest)
-      let maxDuration = 0
       let eventArray = []
+      let maxDuration = 0
 
-      // Build Wave
-      for(let i = 0; i < eventCount; i++){
-        const event = this.createToneEvent()
-        eventArray.push(event)
+      // Set Tone Values
+      // // Synth
+      const attack = this.randomBetween(this.attack.min, this.attack.max);
+      const release = this.randomBetween(this.release.min, this.release.max);
+      const volume = Math.floor(this.randomBetween(this.volume.max, this.volume.min))
 
-        var eventDuration = event.start + event.duration + event.osc.release
-        if(eventDuration > maxDuration) { maxDuration = eventDuration}
+      var synthParams = {
+        attack,
+        release,
+        volume
       }
+      this.synth.set({ 
+        envelope: { 
+          attack: synthParams.attack, 
+          release: synthParams.release
+        }, 
+        volume: synthParams.volume 
+      })
 
-      // Schedule Tone Events
-      eventArray.forEach(event => this.scheduleToneEvent(event))
+      // // Plays
+      for(let i = 0; i < eventCount; i++){
+        const nameIndex = Math.floor(Math.random() * this.names.length);
+        const octaveIndex = Math.floor(Math.random() * this.octaves.length);
+
+        // Osc params
+        const name = this.names[nameIndex];
+        const octave = this.octaves[octaveIndex];
+        const note = name + octave;
+
+        // Timing parameters
+        const duration = (Math.random() * this.duration.max) + this.duration.min;
+        const start = (Math.random() * this.startShift);
+
+        // Hue Parameters
+        var eventDuration = start + duration + release
+        if(eventDuration > maxDuration) { maxDuration = eventDuration }
+
+
+        var event = {
+          note,
+          duration,
+          start
+        }
+
+        // Schedule event
+        this.scheduleToneEvent(event)
+        eventArray.push(event)
+      }
 
       // Schedule Hue Events
       if(this.useHue){
-        var hueEvent = this.mungeHueData(eventArray)
+        var hueEvent = this.mungeHueData(eventArray, synthParams)
         this.scheduleHueEvent(hueEvent)        
       }
 
@@ -135,101 +178,38 @@ export default {
         // ^ plus string starting with + means 'this many seconds after when I was called'
       }
     },
-    createToneEvent() {
-      // Build oscillator
-      const osc = this.createOsc();
-
-      // Timing parameters
-      const duration = (Math.random() * this.duration.max) + this.duration.min;
-      const start = (Math.random() * 5);
-      const hueShift = { 
-        volume: osc.collection.volume.value,
-        nameIndex: osc.hue.nameIndex,
-        octaveIndex: osc.hue.octaveIndex
-      }
-
-      delete osc.hue
-
-      return {
-        osc,
-        start,
-        duration,
-        hueShift,
-      }
-    },
-    createOsc() {
-      // Event values
-      const nameIndex = Math.floor(Math.random() * this.names.length);
-      const octaveIndex = Math.floor(Math.random() * this.octaves.length);
-
-      // Osc params
-      const name = this.names[nameIndex];
-      const octave = this.octaves[octaveIndex];
-      const note = name + octave;
-      const attack = this.randomBetween(this.attack.min, this.attack.max);
-      const release = this.randomBetween(this.release.min, this.release.max);
-      const volume = Math.floor(this.randomBetween(-5, -20))
-
-      const osc = new this.Tone.OmniOscillator({
-        frequency: note,
-        volume: volume,
-      });
-
-      const ampEnv = new this.Tone.AmplitudeEnvelope({
-        attack: attack,
-        attackCurve: 'linear',
-        release: release,
-        releaseCurve: 'linear',
-      });
-
-      osc.partials = this.partials;
-      osc.connect(ampEnv).start();
-      ampEnv.connect(this.oscInNode);
-
-      // Passing it around so it can later be disposed
-      // TODO: could I set a time and dispose it here?
-      ampEnv.collection = osc;
-      ampEnv.hue = {
-        nameIndex: nameIndex,
-        octaveIndex: octaveIndex
-      }
-      return ampEnv;
-    },
-    mungeHueData(events) {
+    mungeHueData(events, synth) {
       // Munge wave data
       var hueIn = { begin: 0, duration: 0, h: this.h.in, s: this.s.in, l: this.l.in}
       var hueOut = { begin: 0, duration: 0, h: this.h.out, s: this.s.out, l: this.l.out }
       
       let eventEnd
-      let totalVolChange = 0
-      let totalNoteChange
 
       events.forEach(event => {
         if ( event.start < hueIn.begin || hueIn.begin == 0 ) { 
           hueIn.begin = event.start
-          hueIn.duration = event.osc.attack
+          hueIn.duration = synth.attack
         }
 
         eventEnd = event.start + event.duration
         if ( eventEnd > hueOut.begin ) {
           hueOut.begin = eventEnd
-          hueOut.duration = event.osc.release
+          hueOut.duration = synth.release
         }
-
-        totalVolChange += event.hueShift.volume
       })
 
       // map the volume range (total volume range * num events) to the possible brightness changes
-      let volumeRange = { min: -25 * events.length, max: -5 * events.length}
-      var volumeIndex = Math.floor(this.mapRange(totalVolChange, volumeRange.min, volumeRange.max, 0, this.brightnessShiftOptions.length))
+      var volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max, 0, this.brightnessShiftOptions.length))
 
       hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1]
       hueIn.l = this.l.in + this.brightnessShiftOptions[volumeIndex]
 
+      console.log('======')
       console.log(`System: ${this.lightId}`)
-      console.log(events)
+      events.forEach(event => console.log(event))
       console.log(`in`, hueIn)
       console.log(`out`, hueOut)
+      console.log('======')
 
 
       return {
@@ -237,14 +217,14 @@ export default {
         hueOut
       }
     },
+    // scheduleToneEvent(event) {
+    //   this.scheduleOsc(event.duration, event.start);
+    //   // this.schedulePostEvent(event);
+    // },
     scheduleToneEvent(event) {
-      this.scheduleOsc(event.osc, event.duration, event.start);
-      this.schedulePostEvent(event);
-    },
-    scheduleOsc(osc, eventDuration, eventStart) {
       this.Tone.Transport.schedule((time) => {
-        osc.triggerAttackRelease(eventDuration);
-      }, '+' + String(eventStart));
+        this.synth.triggerAttackRelease(event.note, event.duration);
+      }, '+' + String(event.start));
     },
     scheduleHueEvent(event){
       this.scheduleHueAttack(event.hueIn);
@@ -262,18 +242,18 @@ export default {
         this.hueApi.setLightState(this.lightId, lightOutState);
       }, (`+` + String(hueOut.begin)));
     },
-    schedulePostEvent(event) {
-      this.Tone.Transport.schedule((time) => {
-        event.osc.dispose();
-        event.osc.collection.dispose();
-      }, '+' + String(event.start + event.duration + event.release + 30));
-    },
+    // schedulePostEvent(event) {
+    //   this.Tone.Transport.schedule((time) => {
+    //     event.osc.dispose();
+    //     event.osc.collection.dispose();
+    //   }, '+' + String(event.start + event.duration + event.release + 30));
+    // },
   },
   mounted() {
-    // this.resetHue();
-    // this.createToneChain();
-    // this.startSection();
-    this.turnOffLights();
+    this.resetHue();
+    this.createToneChain();
+    this.startSection();
+    // this.turnOffLights();
   },
 };
 
