@@ -2,8 +2,8 @@
 	<div>
 		<section-controls :lightId="2" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls>
 		<!-- <section-controls :lightId="4" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
-		<!-- <section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
-		<!-- <section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
+		<section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls>
+		<section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls>
 	</div>
 </template>
 <script>

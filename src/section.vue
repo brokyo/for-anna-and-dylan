@@ -11,24 +11,25 @@ export default {
     return {
       // Section data
       active: true,
-      activeEvent: {},
+      useHue: true,
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-      nameHueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
       octaves: ['2', '3', '4', '5'],
       numEvents: ['1', '1', '3'],
-      octaveBrightnessShiftOptions: [-2, 0, 2],
+      hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
+      brightnessShiftOptions: [0, 2, 4, 6, 8, 10],
+      saturationShiftOptions: [-10, -5, 0],
       // Hue Config
       h: {
-        in: 20,
+        in: 10,
         out: 0,
       },
       s: {
         in: 100,
-        out: 0,
+        out: 100,
       },
       l: {
-        in: 60,
-        out: 0,
+        in: 15,
+        out: 1,
       },
       attack: {
         max: 3,
@@ -78,14 +79,11 @@ export default {
     currentTime() {
       return this.Tone.Transport.toSeconds(`${this.Tone.Transport.ticks}i`);
     },
-    normalizeRange(val, max, min) {
-      return (val - min) / (max - min);
-    },
     turnOffLights() {
       this.hueApi.setLightState(this.lightId, this.lightState.create().off());
     },
     mapRange(num, inMin, inMax, outMin, outMax) {
-      return (num - inMin) * (moutMax - outMin) / (inMax - inMin) + outMin;
+      return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     },
     // INIT METHODS
     resetHue() {
@@ -112,15 +110,14 @@ export default {
     generateWave(){
       // Pick number of events in wave and create them
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)]
-      // console.log(`system: ${this.lightId} wave events: ${eventCount}`)
 
-      const waveRest = 2
+      const waveRest = (Math.random() * 15)
       let maxDuration = 0
       let eventArray = []
 
       // Build Wave
       for(let i = 0; i < eventCount; i++){
-        const event = this.generateEvent()
+        const event = this.createToneEvent()
         eventArray.push(event)
 
         var eventDuration = event.start + event.duration + event.osc.release
@@ -131,11 +128,10 @@ export default {
       eventArray.forEach(event => this.scheduleToneEvent(event))
 
       // Schedule Hue Events
-      var hueEvent = this.mungeHueData(eventArray)
-      this.scheduleHueEvent(hueEvent)
-
-      console.log(eventArray)
-      console.log(hueEvent)
+      if(this.useHue){
+        var hueEvent = this.mungeHueData(eventArray)
+        this.scheduleHueEvent(hueEvent)        
+      }
 
       // Schedule next wave 
       if(this.active){
@@ -145,7 +141,29 @@ export default {
         // ^ plus string starting with + means 'this many seconds after when I was called'
       }
     },
-    generateEvent() {
+    createToneEvent() {
+      // Build oscillator
+      const osc = this.createOsc();
+
+      // Timing parameters
+      const duration = (Math.random() * 9) + 3;
+      const start = (Math.random() * 5);
+      const hueShift = { 
+        volume: osc.collection.volume.value,
+        nameIndex: osc.hue.nameIndex,
+        octaveIndex: osc.hue.octaveIndex
+      }
+
+      delete osc.hue
+
+      return {
+        osc,
+        start,
+        duration,
+        hueShift,
+      }
+    },
+    createOsc() {
       // Event values
       const nameIndex = Math.floor(Math.random() * this.names.length);
       const octaveIndex = Math.floor(Math.random() * this.octaves.length);
@@ -156,33 +174,42 @@ export default {
       const note = name + octave;
       const attack = this.randomBetween(this.attack.min, this.attack.max);
       const release = this.randomBetween(this.release.min, this.release.max);
+      const volume = Math.floor(this.randomBetween(-5, -20))
 
-      // Build oscillator
-      const osc = this.createOsc(note, attack, release);
+      const osc = new this.Tone.OmniOscillator({
+        frequency: note,
+        volume: volume,
+      });
 
-      // Light params
-      const hueShift = this.nameHueShiftOptions[nameIndex];
-      const octaveShift = this.octaveBrightnessShiftOptions[octaveIndex];
+      const ampEnv = new this.Tone.AmplitudeEnvelope({
+        attack: attack,
+        attackCurve: 'linear',
+        release: release,
+        releaseCurve: 'linear',
+      });
 
-      // Timing parameters
-      const duration = (Math.random() * 9) + 3;
-      const start = (Math.random() * 5);
+      osc.partials = this.partials;
+      osc.connect(ampEnv).start();
+      ampEnv.connect(this.oscInNode);
 
-      return {
-        osc,
-        start,
-        release,
-        duration,
-        nameIndex,
-        octaveIndex
+      // Passing it around so it can later be disposed
+      // TODO: could I set a time and dispose it here?
+      ampEnv.collection = osc;
+      ampEnv.hue = {
+        nameIndex: nameIndex,
+        octaveIndex: octaveIndex
       }
+      return ampEnv;
     },
     mungeHueData(events) {
       // Munge wave data
       var hueIn = { begin: 0, duration: 0, h: this.h.in, s: this.s.in, l: this.l.in}
       var hueOut = { begin: 0, duration: 0, h: this.h.out, s: this.s.out, l: this.l.out }
-  
+      
       let eventEnd
+      let totalVolChange = 0
+      let totalNoteChange
+
       events.forEach(event => {
         if ( event.start < hueIn.begin || hueIn.begin == 0 ) { 
           hueIn.begin = event.start
@@ -195,33 +222,25 @@ export default {
           hueOut.duration = event.osc.release
         }
 
+        totalVolChange += event.hueShift.volume
       })
+
+      // map the volume range (total volume range * num events) to the possible brightness changes
+      let volumeRange = { min: -25 * events.length, max: -5 * events.length}
+      var volumeIndex = Math.floor(this.mapRange(totalVolChange, volumeRange.min, volumeRange.max, 0, this.brightnessShiftOptions.length))
+
+      hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1]
+      hueIn.l = this.l.in + this.brightnessShiftOptions[volumeIndex]
+
+      console.log(`System: ${this.lightId}`)
+      console.log(`in`, hueIn)
+      console.log(`out`, hueOut)
+
 
       return {
         hueIn,
         hueOut
       }
-    },
-    createOsc(note, attackTime, releaseTime) {
-      const osc = new this.Tone.OmniOscillator({
-        frequency: note,
-        volume: -5,
-      });
-
-      const ampEnv = new this.Tone.AmplitudeEnvelope({
-        attack: attackTime,
-        attackCurve: 'linear',
-        release: releaseTime,
-        releaseCurve: 'linear',
-      });
-
-      osc.partials = this.partials;
-      osc.connect(ampEnv).start();
-      ampEnv.connect(this.oscInNode);
-
-      // Dispose of ampenv
-      ampEnv.collection = osc;
-      return ampEnv;
     },
     scheduleToneEvent(event) {
       this.scheduleOsc(event.osc, event.duration, event.start);
@@ -244,7 +263,7 @@ export default {
     },
     scheduleHueRelease(hueOut) {
       this.Tone.Transport.schedule((time) => {
-        const lightOutState = this.lightState.create().hsl(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000).off();
+        const lightOutState = this.lightState.create().hsl(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightOutState);
       }, (`+` + String(hueOut.begin)));
     },
@@ -252,7 +271,7 @@ export default {
       this.Tone.Transport.schedule((time) => {
         event.osc.dispose();
         event.osc.collection.dispose();
-      }, '+' + String(event.start + event.duration + event.release));
+      }, '+' + String(event.start + event.duration + event.release + 30));
     },
   },
   mounted() {
@@ -260,7 +279,6 @@ export default {
     this.createToneChain();
     this.startSection();
     // this.turnOffLights();
-    // this.createOsc().triggerAttackRelease(2)
   },
 };
 
