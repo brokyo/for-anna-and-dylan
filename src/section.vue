@@ -20,12 +20,12 @@ export default {
       saturationShiftOptions: [-10, -5, 0],
       // Hue Config
       h: {
-        in: 10,
-        out: 0,
+        in: 260,
+        out: 240,
       },
       s: {
-        in: 100,
-        out: 100,
+        in: 80,
+        out: 50,
       },
       l: {
         in: 15,
@@ -50,11 +50,11 @@ export default {
       phaser: {
         Q: 10, baseFrequency: 350, frequency: 0.5, octaves: 3, stages: 10, wet: 0,
       },
-      feedbackDelay: { delayTime: 0.015, feedback: 0.5, wet: 0.05 },
+      feedbackDelay: { delayTime: 0.15, feedback: 0.5, wet: 0.15 },
       chorus: {
         delayTime: 3.5, depth: 0.7, feedback: 0.15, frequency: 1.5, spread: 180, type: 'sine', wet: 0.6,
       },
-      EQ3: { high: 0, low: '-21', mid: '-12' },
+      EQ3: { high: '-10', low: '-11', mid: '-4' },
       reverb: { dampening: 3000, roomSize: 0 },
       filter: {
         Q: 0, active: true, frequency: 536, rolloff: -12, type: 'lowpass',
@@ -87,7 +87,7 @@ export default {
     },
     // INIT METHODS
     resetHue() {
-      this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(25, 0, 0));
+      this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.l.out));
     },
     createToneChain() {
 
@@ -257,13 +257,13 @@ export default {
     },
     scheduleHueAttack(hueIn) {
       this.Tone.Transport.schedule((time) => {
-        const lightInState = this.lightState.create().on().hsl(hueIn.h, hueIn.s, hueIn.l).transition(hueIn.duration * 1000);
+        const lightInState = this.lightState.create().on().hsb(hueIn.h, hueIn.s, hueIn.l).transition(hueIn.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightInState);
       }, ('+' + String(hueIn.begin)));
     },
     scheduleHueRelease(hueOut) {
       this.Tone.Transport.schedule((time) => {
-        const lightOutState = this.lightState.create().hsl(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000);
+        const lightOutState = this.lightState.create().hsb(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightOutState);
       }, (`+` + String(hueOut.begin)));
     },
