@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'l'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b'],
   created() {
     this.waveRest = 3
     this.useHue = true
@@ -87,7 +87,7 @@ export default {
     },
     // INIT METHODS
     resetHue() {
-      this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.l.out));
+      this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
     },
     createToneChain() {
       this.synth = new this.Tone.PolySynth()
@@ -180,8 +180,8 @@ export default {
     },
     mungeHueData(events, synth) {
       // Munge wave data
-      var hueIn = { begin: 0, duration: 0, h: this.h.in, s: this.s.in, l: this.l.in}
-      var hueOut = { begin: 0, duration: 0, h: this.h.out, s: this.s.out, l: this.l.out }
+      var hueIn = { begin: 0, duration: 0, h: this.h.in, s: this.s.in, b: this.b.in}
+      var hueOut = { begin: 0, duration: 0, h: this.h.out, s: this.s.out, b: this.b.out }
       
       let eventEnd
 
@@ -202,7 +202,7 @@ export default {
       var volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max, 0, this.brightnessShiftOptions.length))
 
       hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1]
-      hueIn.l = this.l.in + this.brightnessShiftOptions[volumeIndex]
+      hueIn.l = this.b.in + this.brightnessShiftOptions[volumeIndex]
 
       console.log('======')
       console.log(`System: ${this.lightId}`)

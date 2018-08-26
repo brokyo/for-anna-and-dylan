@@ -1,21 +1,28 @@
 <template>
 	<div>
-    <pre>{{h}}</pre>
-    <label>h.in</label>
-    <input type="range" min="0" max="360" v-model.number="h.in">
-    <label>h.out</label>
-    <input type="range" min="0" max="360" v-model.number="h.out">
-    <pre>{{s}}</pre>
-    <label>s.in</label>
-    <input type="range" min="0" max="100" v-model.number="s.in">
-    <label>s.out</label>
-    <input type="range" min="0" max="100" v-model.number="s.out">
-    <pre>{{l}}</pre>
-    <label>l.in</label>
-    <input type="range" min="0" max="100" v-model.number="l.in">
-    <label>l.out</label>
-    <input type="range" min="0" max="360" v-model.number="l.out">
-		<section-controls :lightId="2" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :l="l"></section-controls>
+    <h2>Universals</h2>
+    <div id="universalConfig">
+      <div class="universalConfigSetting">
+        <label>Hue</label>
+        <input type="range" min="0" max="360" v-model.number="h.in"><span>h.in: {{h.in}}</span>
+        <input type="range" min="0" max="360" v-model.number="h.out">h.out: {{h.out}}</span>
+      </div>
+      <div class="universalConfigSetting">
+        <label>Saturation</label>
+        <input type="range" min="0" max="100" v-model.number="s.in">
+        <span>s.in {{s.in}}</span>
+        <input type="range" min="0" max="100" v-model.number="s.out">
+        <span>s.out {{s.out}}</span>
+      </div>
+      <div class="universalConfigSetting">
+        <label>Brightness</label>
+        <input type="range" min="0" max="100" v-model.number="b.in">
+        <span>b.in {{b.in}}</span>
+        <input type="range" min="0" max="100" v-model.number="b.out">
+        <span>b.out {{b.out}}</span>
+      </div>
+    </div>
+		<section-controls :lightId="2" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls>
 		<!-- <section-controls :lightId="4" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
 		<!-- <section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :l="l"></section-controls> -->
 		<!-- <section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :l="l"></section-controls> -->
@@ -50,7 +57,7 @@ export default {
         in: 100,
         out: 100,
       },
-      l: {
+      b: {
         in: 25,
         out: 1,
       },
@@ -66,5 +73,16 @@ export default {
   },
 };
 </script>
-<style>
+<style lang="scss">
+#universalConfig {
+  display: flex;
+  flex-direction: row;
+
+  .universalConfigSetting {
+    margin-right: 20px;
+    input {
+      display: block;
+    }
+  }
+}
 </style>
