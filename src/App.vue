@@ -1,5 +1,6 @@
 <template>
 	<div>
+    <button @click="lightsOff">Lights Off</button>
     <h2>Universals</h2>
     <div id="universalConfig">
       <div class="universalConfigSetting">
@@ -24,8 +25,8 @@
     </div>
 		<section-controls :lightId="2" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls>
 		<!-- <section-controls :lightId="4" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
-		<!-- <section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :l="l"></section-controls> -->
-		<!-- <section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :l="l"></section-controls> -->
+		<!-- <section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls> -->
+		<!-- <section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls> -->
 	</div>
 </template>
 <script>
@@ -48,6 +49,7 @@ export default {
   },
   data() {
     return {
+      lightIds: [2, 5, 6],
       // Hue Config
       h: {
         in: 310,
@@ -66,10 +68,18 @@ export default {
   components: {
     'section-controls': section,
   },
+  methods: {
+    lightsOff () {
+      this.lightIds.forEach(id => {
+        this.hueApi.setLightState(id, this.lightState.create().off());      
+      })
+    }
+  },
   mounted() {
     // Start Tone's timeline ["transport"]
     this.Tone.Transport.start();
-
+    this.hueApi.setLightState(6, this.lightState.create().on().hsb(280, 100, 0))
+    // this.hueApi.setLightState(6, this.lightState.create().on().transition(10000));
   },
 };
 </script>
