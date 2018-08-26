@@ -6,41 +6,35 @@
 
 <script>
 export default {
-  props: ['lightId', 'Tone', 'hueApi', 'lightState'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'l'],
+  created() {
+    this.waveRest = 3
+    this.useHue = true
+    this.duration = {
+      max: 9,
+      min: 2
+    }
+  },
   data() {
     return {
       // Section data
       active: true,
-      useHue: true,
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-      octaves: ['2', '3', '4', '5'],
+      octaves: ['3', '4', '5'],
       numEvents: ['1', '1', '3'],
       hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
       brightnessShiftOptions: [0, 2, 4, 6, 8, 10],
       saturationShiftOptions: [-10, -5, 0],
-      // Hue Config
-      h: {
-        in: 260,
-        out: 240,
-      },
-      s: {
-        in: 80,
-        out: 50,
-      },
-      l: {
-        in: 15,
-        out: 1,
-      },
       attack: {
         max: 3,
         min: 1,
       },
       release: {
-        max: 8,
-        min: 3,
+        max: 3,
+        min: 1,
       },
       // ToneJS Config
-      partials: [0.165, 0, 0.03, 0, 0.025, 0, 0.025, 0, 0.025, 0, 0.03, 0, 0.035, 0, 0, 0.085, 0.07],
+      partials: [0.5, 0.2, 0.03, 0, 0.2],
       tremolo: {
         depth: 0.5, frequency: 10, spread: 180, type: 'sine', wet: 0.05,
       },
@@ -50,12 +44,12 @@ export default {
       phaser: {
         Q: 10, baseFrequency: 350, frequency: 0.5, octaves: 3, stages: 10, wet: 0,
       },
-      feedbackDelay: { delayTime: 0.15, feedback: 0.5, wet: 0.15 },
+      feedbackDelay: { delayTime: 0.15, feedback: 0.5, wet: 0.65 },
       chorus: {
         delayTime: 3.5, depth: 0.7, feedback: 0.15, frequency: 1.5, spread: 180, type: 'sine', wet: 0.6,
       },
       EQ3: { high: '-10', low: '-11', mid: '-4' },
-      reverb: { dampening: 3000, roomSize: 0 },
+      reverb: { dampening: 3000, roomSize: 0.5 },
       filter: {
         Q: 0, active: true, frequency: 536, rolloff: -12, type: 'lowpass',
       },
@@ -111,7 +105,7 @@ export default {
       // Pick number of events in wave and create them
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)]
 
-      const waveRest = (Math.random() * 15)
+      const waveRest = (Math.random() * this.waveRest)
       let maxDuration = 0
       let eventArray = []
 
@@ -146,7 +140,7 @@ export default {
       const osc = this.createOsc();
 
       // Timing parameters
-      const duration = (Math.random() * 9) + 3;
+      const duration = (Math.random() * this.duration.max) + this.duration.min;
       const start = (Math.random() * 5);
       const hueShift = { 
         volume: osc.collection.volume.value,
@@ -233,6 +227,7 @@ export default {
       hueIn.l = this.l.in + this.brightnessShiftOptions[volumeIndex]
 
       console.log(`System: ${this.lightId}`)
+      console.log(events)
       console.log(`in`, hueIn)
       console.log(`out`, hueOut)
 
@@ -275,10 +270,10 @@ export default {
     },
   },
   mounted() {
-    this.resetHue();
-    this.createToneChain();
-    this.startSection();
-    // this.turnOffLights();
+    // this.resetHue();
+    // this.createToneChain();
+    // this.startSection();
+    this.turnOffLights();
   },
 };
 
