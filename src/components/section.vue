@@ -1,3 +1,6 @@
+<!-- This component exists once for each section [light on network]  The values 
+in it are section-specific once on page so changing attack.min for section 2, 
+for example, does not change it for section 3 -->
 <template>
 	<div class="sectionContainer">
 		<h2>Section {{lightId}}</h2>
@@ -54,17 +57,24 @@
 
 <script>
 export default {
+	// Values shared from `app.vue`. Any changes that happen there will end up here
   props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config'],
+  // As soon as the component is created assign the config values so they can
+  /// be used by the synth patch
   created() {
     this.partialsConfig = this.config.partials;
     this.chorusConfig = this.config.chorus;
     this.EQ3Config = this.config.EQ3;
     this.filterConfig = this.config.filter;
   },
+  // Reactive data we'll want the ability to change while the program is running
   data() {
     return {
+    	// Controls
       active: true,
       useHue: false,
+      // Possibilities for light & sound. These values are selected or derived
+      /// in `generateWave()` and `mungeHueData()` 
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       octaves: ['3', '4', '5'],
       numEvents: ['1', '1', '3'],
@@ -97,6 +107,9 @@ export default {
       lineOut: {},
     };
   },
+  // Do something when these values change
+  /// Largely used to allow the live updating of the timbre by making changes
+  /// to the partials on page - for example - propagate to the synth
   watch: {
     partialsConfig: {
       handler() {
@@ -118,14 +131,18 @@ export default {
     },
   },
   methods: {
-    // UTILITIES
+  	///////////////
+    // UTILITIES //
+    //////////////
     randomBetween(min, max) {
       return (Math.random() * max) + min;
     },
     mapRange(num, inMin, inMax, outMin, outMax) {
       return ((num - inMin) * (outMax - outMin)) / ((inMax - inMin) + outMin);
     },
-    // INIT METHODS
+    //////////////////
+    // INIT METHODS //
+    /////////////////
     createToneChain() {
       this.synth = new this.Tone.PolySynth();
       this.synth.set({ oscillator: { partials: this.partialsConfig } });
@@ -136,7 +153,9 @@ export default {
 
       this.synth.chain(this.chorusNode, this.filterNode, this.eq3Node, this.filterNode, this.lineOut, this.$parent.lineIn);
     },
-    // CONTROL METHODS
+    /////////////////////
+    // CONTROL METHODS //
+    /////////////////////
     testSynth() {
       this.synth.triggerAttackRelease(220, 2);
     },
@@ -147,24 +166,27 @@ export default {
       this.active = true;
       this.generateWave();
     },
+    // Generates all the values needed to create a wave. Runs once per wave.
+    /// This is the "source" of the randomness
     generateWave() {
-      // Set wave vars
+      // Generate wave vars from options in `data`
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)];
       const waveRest = (Math.random() * this.waveRest);
       const eventArray = [];
       let maxDuration = 0;
 
-      // Set Tone Values
-      // // Synth
       const attack = this.randomBetween(this.attack.min, this.attack.max);
       const release = this.randomBetween(this.release.min, this.release.max);
       const volume = Math.floor(this.randomBetween(this.volume.max, this.volume.min));
 
+      // Now that synth params for this wave have been set save them to be used elswhere
       const synthParams = {
         attack,
         release,
         volume,
       };
+
+      // Set the synth to use the generated values
       this.synth.set({
         envelope: {
           attack: synthParams.attack,
@@ -173,25 +195,23 @@ export default {
         volume: synthParams.volume,
       });
 
-      // // Plays
+      // Generate notes played and schedule them
       for (let i = 0; i < eventCount; i++) {
         const nameIndex = Math.floor(Math.random() * this.names.length);
         const octaveIndex = Math.floor(Math.random() * this.octaves.length);
 
-        // Osc params
+        // Play params
         const name = this.names[nameIndex];
         const octave = this.octaves[octaveIndex];
         const note = name + octave;
 
-        // Timing parameters
+        // Timing params
         const duration = (Math.random() * this.duration.max) + this.duration.min;
         const start = (Math.random() * this.startShift);
-
-        // Hue Parameters
         const eventDuration = start + duration + release;
         if (eventDuration > maxDuration) { maxDuration = eventDuration; }
 
-
+        // Now that event params have been generated store them to be used elsewhere
         const event = {
           note,
           duration,
@@ -211,23 +231,36 @@ export default {
 
       // Schedule next wave
       if (this.active) {
-        this.Tone.Transport.schedule((time) => {
+        this.Tone.Transport.scheduleOnce((time) => {
           this.generateWave();
         }, `+${String(maxDuration + waveRest)}`);
         // ^ plus string starting with + means 'this many seconds after when I was called'
       }
     },
+    // Take wave timing and timbre values and convert them into hue actions so that
+    /// light timing and colors match the sounds
     mungeHueData(events, synth) {
-      // Munge wave data
+      // Set defaults
+
+      /// Hue In = how long it takes for the light to light up and what colors
+      /// it lights up to. 
+      /// hueIn starts as soon as the first note is played and goes to the end of
+      /// its attack 
       const hueIn = {
         begin: 0, duration: 0, h: this.h.in, s: this.s.in, b: this.b.in,
       };
+
+      /// Hue Out = how long it takes for the light to dim and what colors
+      /// it dims to. 
+      /// hueOut starts as soon as the last note is played and goes to the end of
+      /// its release 
       const hueOut = {
         begin: 0, duration: 0, h: this.h.out, s: this.s.out, b: this.b.out,
       };
 
       let eventEnd;
-
+      // Find the first and last event so that the timing of `hueIn` and `hueOut`
+      /// is correct
       events.forEach((event) => {
         if (event.start < hueIn.begin || hueIn.begin === 0) {
           hueIn.begin = event.start;
@@ -241,12 +274,14 @@ export default {
         }
       });
 
-      // map the volume range (total volume range * num events) to the possible brightness changes
+      // map the volume generated to the proper brightness
+      /// e.g. make quieter volumes result in less bright lights 
       const volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max, 0, this.brightnessShiftOptions.length));
 
       hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1];
       hueIn.l = this.b.in + this.brightnessShiftOptions[volumeIndex];
 
+      // TODO: Print this to the screen
       console.log('======');
       console.log(`System: ${this.lightId}`);
       events.forEach(event => console.log(event));
@@ -260,12 +295,14 @@ export default {
         hueOut,
       };
     },
-    // scheduleToneEvent(event) {
-    //   this.scheduleOsc(event.duration, event.start);
-    //   // this.schedulePostEvent(event);
-    // },
+    ////////////////////////
+    // SCHEDULING METHODS //
+    ////////////////////////
+    // All these events use Tone's `scheduleOnce` method which just places
+    /// them at the appropriate point in the future. It's sample accurate but
+    /// that doesn't matter on something like this
     scheduleToneEvent(event) {
-      this.Tone.Transport.schedule((time) => {
+      this.Tone.Transport.scheduleOnce((time) => {
         this.synth.triggerAttackRelease(event.note, event.duration);
       }, `+${String(event.start)}`);
     },
@@ -274,27 +311,21 @@ export default {
       this.scheduleHueRelease(event.hueOut);
     },
     scheduleHueAttack(hueIn) {
-      this.Tone.Transport.schedule((time) => {
+      this.Tone.Transport.scheduleOnce((time) => {
         const lightInState = this.lightState.create().on().hsb(hueIn.h, hueIn.s, hueIn.l).transition(hueIn.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightInState);
       }, (`+${String(hueIn.begin)}`));
     },
     scheduleHueRelease(hueOut) {
-      this.Tone.Transport.schedule((time) => {
+      this.Tone.Transport.scheduleOnce((time) => {
         const lightOutState = this.lightState.create().hsb(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightOutState);
       }, (`+${String(hueOut.begin)}`));
     },
-    // schedulePostEvent(event) {
-    //   this.Tone.Transport.schedule((time) => {
-    //     event.osc.dispose();
-    //     event.osc.collection.dispose();
-    //   }, '+' + String(event.start + event.duration + event.release + 30));
-    // },
   },
   mounted() {
-    // this.createToneChain();
-    // this.startSection();
+    this.createToneChain();
+    this.startSection();
   },
 };
 
