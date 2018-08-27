@@ -1,44 +1,58 @@
 <template>
 	<div>
     <button @click="lightsOff">Lights Off</button>
+    <button @click="workLights">Work Lights</button>
+    <button @click="testInColor">Test In Color</button>
+    <button @click="testOutColor">Test Out Color</button>
     <h2>Universals</h2>
     <div id="universalConfig">
       <div class="universalConfigSetting">
         <label>Hue</label>
-        <input type="range" min="0" max="360" v-model.number="h.in"><span>h.in: {{h.in}}</span>
-        <input type="range" min="0" max="360" v-model.number="h.out">h.out: {{h.out}}</span>
+        <input type="range" min="0" max="360" v-model.number="h.in">
+        <input type="range" min="0" max="360" v-model.number="h.out">
       </div>
       <div class="universalConfigSetting">
         <label>Saturation</label>
         <input type="range" min="0" max="100" v-model.number="s.in">
-        <span>s.in {{s.in}}</span>
         <input type="range" min="0" max="100" v-model.number="s.out">
-        <span>s.out {{s.out}}</span>
       </div>
       <div class="universalConfigSetting">
         <label>Brightness</label>
         <input type="range" min="0" max="100" v-model.number="b.in">
-        <span>b.in {{b.in}}</span>
         <input type="range" min="0" max="100" v-model.number="b.out">
-        <span>b.out {{b.out}}</span>
       </div>
     </div>
-		<section-controls :lightId="2" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls>
-		<!-- <section-controls :lightId="4" :Tone="Tone" :lightState="lightState" :hueApi="hueApi"></section-controls> -->
-		<!-- <section-controls :lightId="5" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls> -->
-		<!-- <section-controls :lightId="6" :Tone="Tone" :lightState="lightState" :hueApi="hueApi" :h="h" :s="s" :b="b"></section-controls> -->
+		<section-controls
+      v-if="roomBuilt"
+      v-for="light in lightIds" 
+      :lightId="light" 
+      :Tone="Tone" 
+      :lightState="lightState" 
+      :hueApi="hueApi" 
+      :h="h" 
+      :s="s" 
+      :b="b"
+      :config="sectionConfig"
+      >
+    </section-controls>
+
 	</div>
 </template>
 <script>
+// room timbre config stored externally for easier editin
+import room from '@/configs/room.js'
+import sectionConfig from '@/configs/section.js'
 import section from '@/section.vue';
-export default {
 
-  // Incorporate JS libraries so the can be passed to components
-  // Doing it this way means they're only loaded once rather than once
-  // per component
+export default {
+  components: {
+    'section-controls': section,
+  },
   created() {
     // Tone Setup
     this.Tone = require('tone');
+    this.roomConfig = room
+    this.sectionConfig = sectionConfig
 
     // Hue Setup
     this.hue = require('node-hue-api');
@@ -49,11 +63,12 @@ export default {
   },
   data() {
     return {
-      lightIds: [2, 5, 6],
-      // Hue Config
+      roomBuilt: false,
+      useLights: false,
+      lightIds: [2],
       h: {
         in: 310,
-        out: 0,
+        out: 293,
       },
       s: {
         in: 100,
@@ -63,27 +78,78 @@ export default {
         in: 25,
         out: 1,
       },
+      lineIn: {},
+      tremoloNode: {},
+      vibratoNode: {},
+      phaserNode: {},
+      feedbackDelayNode: {},
+      reverbNode: {},
+      EQ3Node: {}
     }
-  },
-  components: {
-    'section-controls': section,
   },
   methods: {
     lightsOff () {
       this.lightIds.forEach(id => {
         this.hueApi.setLightState(id, this.lightState.create().off());      
       })
-    }
+    },
+    workLights () {
+      this.lightIds.forEach(id => {
+        this.hueApi.setLightState(id, this.lightState.create().on().hsb(40, 65, 85));      
+      })
+    },
+    testInColor () {
+      this.lightIds.forEach(id => {
+        this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.in, this.s.in, this.b.in));      
+      })
+    },
+    testOutColor () {
+      this.lightIds.forEach(id => {
+        this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));      
+      })
+    },
+    setRoomConfig () {
+      this.lineIn = new this.Tone.Gain()
+      this.tremoloNode = new this.Tone.Tremolo(this.roomConfig.tremolo);
+      this.vibratoNode = new this.Tone.Vibrato(this.roomConfig.vibrato);
+      this.phaserNode = new this.Tone.Phaser(this.roomConfig.phaser);
+      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.roomConfig.feedbackDelay);
+      this.reverbNode = new this.Tone.Freeverb(this.roomConfig.reverb);
+      this.eq3Node = new this.Tone.EQ3(this.roomConfig.EQ3);
+
+      this.lineIn.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.reverbNode, this.eq3Node, this.Tone.Master)
+      this.roomBuilt = true
+    },
+    resetHue() {
+      this.lightIds.forEach(id => {
+        this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
+      })
+    },
   },
   mounted() {
-    // Start Tone's timeline ["transport"]
+    if(this.useLights) {
+      this.resetHue()
+    }
+    this.setRoomConfig()
     this.Tone.Transport.start();
-    this.hueApi.setLightState(6, this.lightState.create().on().hsb(280, 100, 0))
-    // this.hueApi.setLightState(6, this.lightState.create().on().transition(10000));
   },
 };
 </script>
 <style lang="scss">
+button {
+  height: 40px;
+  width: 120px;
+  margin-right: 10px;
+}
+
+button:hover {
+  background-color: #FED8F6
+}
+
+input[type="range"] {
+  width: 250px;
+}
+
 #universalConfig {
   display: flex;
   flex-direction: row;

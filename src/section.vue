@@ -1,6 +1,9 @@
 <template>
-	<div>
-		<pre>Section {{lightId}}</pre>
+	<div class="sectionContainer">
+		<h2>Section {{lightId}}</h2>
+    <button @click="testSynth">Test Synth</button>
+    <button v-if="active" @click="stopSection">Stop</button>
+    <button v-else @click="startSection">Make Waves</button>
     <div>
       <h3>Timing</h3>
       <div class="configContainer">
@@ -9,17 +12,9 @@
           <input v-model.number="waveRest">
         </div>
         <div class="timingItem">
-          <label>Duration</label>
-          <label>Max</label>
+          <label>Max Duration</label>
           <input v-model.number="duration.max">
-          <label>Min</label>
-          <input v-model.number="duration.min">
-        </div>
-        <div class="timingItem">
-          <label>Duration</label>
-          <label>Max</label>
-          <input v-model.number="duration.max">
-          <label>Min</label>
+          <label>Min Duration</label>
           <input v-model.number="duration.min">
         </div>
         <div class="timingItem">
@@ -33,7 +28,7 @@
       <div class="configContainer">
         <div class="timbreItem">
           <h4>Partials</h4>
-          <input type="range" min="0" max="1" step="0.005" v-model.number="partials[index]" v-for="(partial, index) in partials"></input>
+          <input type="range" min="0" max="1" step="0.005" v-model.number="partialsConfig[index]" v-for="(partial, index) in partialsConfig"></input>
         </div>
         <div class="timbreItem">
           <h4>EQ3</h4>
@@ -43,7 +38,6 @@
           <input type="range" max="0" min="-30" v-model="EQ3Config.mid"></input>
           <label>High</label>
           <input type="range" max="0" min="-30" v-model="EQ3Config.high"></input>
-          <pre>{{EQ3Config}}</pre>
         </div>
       </div>
     </div>
@@ -52,11 +46,17 @@
 
 <script>
 export default {
-  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config'],
+  created() {
+    this.partialsConfig = this.config.partials
+    this.chorusConfig = this.config.chorus
+    this.EQ3Config = this.config.EQ3
+    this.filterConfig = this.config.filter
+  },
   data() {
     return {
-      // Section data
       active: true,
+      useHue: false,
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       octaves: ['3', '4', '5'],
       numEvents: ['1', '1', '3'],
@@ -76,60 +76,24 @@ export default {
         max: 0
       },
       waveRest: 3,
-      useHue: true,
       duration: {
         max: 9,
         min: 2
       },
       startShift: 5,
-      // ToneJS Config
-      partials: [0.5, 0.2, 0.03, 0, 0.2, 0, 0, 0, 0, 0, 0, 0],
-      tremoloConfig: {
-        depth: 0.5, frequency: 10, spread: 180, type: 'sine', wet: 0.05,
-      },
-      vibratoConfig: {
-        depth: 0.1, frequency: 5, maxDelay: 0.005, type: 'sine', wet: 0.1,
-      },
-      phaserConfig: {
-        Q: 10, baseFrequency: 350, frequency: 0.5, octaves: 3, stages: 10, wet: 0,
-      },
-      feedbackDelayConfig: { delayTime: 0.15, feedback: 0.5, wet: 0.65 },
-      chorusConfig: {
-        delayTime: 3.5, depth: 0.7, feedback: 0.15, frequency: 1.5, spread: 180, type: 'sine', wet: 0.6,
-      },
-      EQ3Config: { high: '-10', low: '-11', mid: '-4' },
-      reverbConfig: { dampening: 3000, roomSize: 0.5 },
-      filterConfig: {
-        Q: 0, active: true, frequency: 536, rolloff: -12, type: 'lowpass',
-      },
       // Tonejs Patch
       synth: {},
-      oscInNode: {},
-      tremoloNode: {},
-      vibratoNode: {},
-      phaserNode: {},
-      feedbackDelayNode: {},
       chorusNode: {},
-      eq3Node: {},
       filterNode: {},
-      reverbNode: {},
+      eq3Node: {},
+      lineOut: {}
     };
   },
-  computed: {
-
-  },
   watch: {
-    tremoloConfig: {
-      handler: function() {
-        this.tremoloNode.set(this.tremoloConfig)
-        console.log(this.tremoloNode)
-      },
-      deep: true
-    },
-    partials: {
+    partialsConfig: {
       handler: function() {
         let setArray = []
-        this.partials.forEach(partial => setArray.push(partial))
+        this.partialsConfig.forEach(partial => setArray.push(partial))
         this.synth.set({
           oscillator: {
             partials: setArray
@@ -150,36 +114,29 @@ export default {
     randomBetween(min, max) {
       return (Math.random() * max) + min;
     },
-    currentTime() {
-      return this.Tone.Transport.toSeconds(`${this.Tone.Transport.ticks}i`);
-    },
-    turnOffLights() {
-      this.hueApi.setLightState(this.lightId, this.lightState.create().off());
-    },
     mapRange(num, inMin, inMax, outMin, outMax) {
       return (num - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     },
     // INIT METHODS
-    resetHue() {
-      this.hueApi.setLightState(this.lightId, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
-    },
     createToneChain() {
       this.synth = new this.Tone.PolySynth()
-      this.synth.set({ oscillator: { partials: this.partials }})
-      this.oscInNode = new this.Tone.Volume()
-      this.tremoloNode = new this.Tone.Tremolo(this.tremoloConfig);
-      this.vibratoNode = new this.Tone.Vibrato(this.vibratoConfig);
-      this.phaserNode = new this.Tone.Phaser(this.phaserConfig);
-      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.feedbackDelayConfig);
+      this.synth.set({ oscillator: { partials: this.partialsConfig }})
       this.chorusNode = new this.Tone.Chorus(this.chorusConfig);
       this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
       this.filterNode = new this.Tone.Filter(this.filterConfig);
-      this.reverbNode = new this.Tone.Freeverb(this.reverbConfig);
+      this.lineOut = new this.Tone.Volume()
 
-      this.synth.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.chorusNode, this.eq3Node, this.reverbNode, this.filterNode, this.Tone.Master);
+      this.synth.chain(this.chorusNode, this.filterNode, this.eq3Node, this.filterNode, this.lineOut, this.$parent.lineIn);
     },
     // CONTROL METHODS
+    testSynth () {
+      this.synth.triggerAttackRelease(220, 2)
+    },
+    stopSection () {
+      this.active = false
+    },
     startSection() {
+      this.active = true
       this.generateWave();
     },
     generateWave(){
@@ -324,21 +281,27 @@ export default {
     // },
   },
   mounted() {
-    this.resetHue();
-    this.createToneChain();
-    this.startSection();
-    // this.synth.triggerAttack(220)
-    // this.turnOffLights();
+    // this.createToneChain();
+    // this.startSection();
   },
 };
 
 </script>
 
 <style lang="scss">
+.sectionContainer {
+  margin-top: 80px;
+}
 input {
+  display: block;
+}
+label {
   display: block;
 }
 .configContainer {
   display: flex;
+}
+.timbreItem {
+  margin-right: 60px;
 }
 </style>
