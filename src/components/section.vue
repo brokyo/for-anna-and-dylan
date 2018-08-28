@@ -1,10 +1,11 @@
-<!-- This component exists once for each section [light on network]  The values 
-in it are section-specific once on page so changing attack.min for section 2, 
+<!-- This component exists once for each section [light on network]  The values
+in it are section-specific once on page so changing attack.min for section 2,
 for example, does not change it for section 3 -->
 <template>
 	<div class="sectionContainer">
 		<h2>Section {{lightId}}</h2>
-		<button @click="testSynth">Test Synth</button>
+		<button @click="startSynth" v-if="!synthTest">Test Synth</button>
+    <button @click="stopSynth" v-else>Stop Synth</button>
 		<button v-if="active" @click="stopSection">Stop</button>
 		<button v-else @click="startSection">Make Waves</button>
 		<div>
@@ -36,8 +37,8 @@ for example, does not change it for section 3 -->
 						min="0"
 						max="1"
 						step="0.005"
+            v-for="(partial, index) in partialsConfig"
 						v-model.number="partialsConfig[index]"
-						v-for="(partial, index) in partialsConfig"
 						:key="index"
 					>
 				</div>
@@ -57,24 +58,17 @@ for example, does not change it for section 3 -->
 
 <script>
 export default {
-	// Values shared from `app.vue`. Any changes that happen there will end up here
+  // Values shared from `app.vue`. Any changes that happen there will end up here
   props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config'],
-  // As soon as the component is created assign the config values so they can
-  /// be used by the synth patch
-  created() {
-    this.partialsConfig = this.config.partials;
-    this.chorusConfig = this.config.chorus;
-    this.EQ3Config = this.config.EQ3;
-    this.filterConfig = this.config.filter;
-  },
   // Reactive data we'll want the ability to change while the program is running
   data() {
     return {
     	// Controls
-      active: true,
-      useHue: false,
+      active: false,
+      useHue: true,
+      synthTest: false,
       // Possibilities for light & sound. These values are selected or derived
-      /// in `generateWave()` and `mungeHueData()` 
+      // / in `generateWave()` and `mungeHueData()`
       names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       octaves: ['3', '4', '5'],
       numEvents: ['1', '1', '3'],
@@ -91,7 +85,7 @@ export default {
       },
       volume: {
         min: -25,
-        max: 0,
+        max: -5,
       },
       waveRest: 3,
       duration: {
@@ -99,6 +93,11 @@ export default {
         min: 2,
       },
       startShift: 5,
+      // Tonejs Config
+      partialsConfig: {},
+      chorusConfig: {},
+      EQ3Config: {},
+      filterConfig: {},
       // Tonejs Patch
       synth: {},
       chorusNode: {},
@@ -108,8 +107,8 @@ export default {
     };
   },
   // Do something when these values change
-  /// Largely used to allow the live updating of the timbre by making changes
-  /// to the partials on page - for example - propagate to the synth
+  // / Largely used to allow the live updating of the timbre by making changes
+  // / to the partials on page - for example - propagate to the synth
   watch: {
     partialsConfig: {
       handler() {
@@ -131,33 +130,42 @@ export default {
     },
   },
   methods: {
-  	///////////////
+  	// /////////////
     // UTILITIES //
-    //////////////
+    // ////////////
     randomBetween(min, max) {
       return (Math.random() * max) + min;
     },
     mapRange(num, inMin, inMax, outMin, outMax) {
       return ((num - inMin) * (outMax - outMin)) / ((inMax - inMin) + outMin);
     },
-    //////////////////
+    // ////////////////
     // INIT METHODS //
-    /////////////////
+    // ///////////////
     createToneChain() {
       this.synth = new this.Tone.PolySynth();
       this.synth.set({ oscillator: { partials: this.partialsConfig } });
       this.chorusNode = new this.Tone.Chorus(this.chorusConfig);
       this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
       this.filterNode = new this.Tone.Filter(this.filterConfig);
-      this.lineOut = new this.Tone.Volume();
+      this.lineOut = new this.Tone.Volume(-5);
 
-      this.synth.chain(this.chorusNode, this.filterNode, this.eq3Node, this.filterNode, this.lineOut, this.$parent.lineIn);
+      this.synth.chain(
+        this.chorusNode, 
+        this.eq3Node, 
+        this.filterNode, 
+        this.lineOut, 
+        this.$parent.lineIn
+      );
     },
-    /////////////////////
+    // ///////////////////
     // CONTROL METHODS //
-    /////////////////////
-    testSynth() {
-      this.synth.triggerAttackRelease(220, 2);
+    // ///////////////////
+    startSynth() {
+      this.synth.triggerAttackRelease(220);
+    },
+    stopSynth() {
+      this.synth.triggerRelease(220)
     },
     stopSection() {
       this.active = false;
@@ -167,7 +175,7 @@ export default {
       this.generateWave();
     },
     // Generates all the values needed to create a wave. Runs once per wave.
-    /// This is the "source" of the randomness
+    // / This is the "source" of the randomness
     generateWave() {
       // Generate wave vars from options in `data`
       const eventCount = this.numEvents[Math.floor(Math.random() * this.numEvents.length)];
@@ -238,29 +246,29 @@ export default {
       }
     },
     // Take wave timing and timbre values and convert them into hue actions so that
-    /// light timing and colors match the sounds
+    // / light timing and colors match the sounds
     mungeHueData(events, synth) {
       // Set defaults
 
-      /// Hue In = how long it takes for the light to light up and what colors
-      /// it lights up to. 
-      /// hueIn starts as soon as the first note is played and goes to the end of
-      /// its attack 
+      // / Hue In = how long it takes for the light to light up and what colors
+      // / it lights up to.
+      // / hueIn starts as soon as the first note is played and goes to the end of
+      // / its attack
       const hueIn = {
         begin: 0, duration: 0, h: this.h.in, s: this.s.in, b: this.b.in,
       };
 
-      /// Hue Out = how long it takes for the light to dim and what colors
-      /// it dims to. 
-      /// hueOut starts as soon as the last note is played and goes to the end of
-      /// its release 
+      // / Hue Out = how long it takes for the light to dim and what colors
+      // / it dims to.
+      // / hueOut starts as soon as the last note is played and goes to the end of
+      // / its release
       const hueOut = {
         begin: 0, duration: 0, h: this.h.out, s: this.s.out, b: this.b.out,
       };
 
       let eventEnd;
       // Find the first and last event so that the timing of `hueIn` and `hueOut`
-      /// is correct
+      // / is correct
       events.forEach((event) => {
         if (event.start < hueIn.begin || hueIn.begin === 0) {
           hueIn.begin = event.start;
@@ -275,8 +283,8 @@ export default {
       });
 
       // map the volume generated to the proper brightness
-      /// e.g. make quieter volumes result in less bright lights 
-      const volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max, 0, this.brightnessShiftOptions.length));
+      // / e.g. make quieter volumes result in less bright lights
+      const volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max + this.volume.mind, 0, this.brightnessShiftOptions.length));
 
       hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1];
       hueIn.l = this.b.in + this.brightnessShiftOptions[volumeIndex];
@@ -295,12 +303,12 @@ export default {
         hueOut,
       };
     },
-    ////////////////////////
+    // //////////////////////
     // SCHEDULING METHODS //
-    ////////////////////////
+    // //////////////////////
     // All these events use Tone's `scheduleOnce` method which just places
-    /// them at the appropriate point in the future. It's sample accurate but
-    /// that doesn't matter on something like this
+    // / them at the appropriate point in the future. It's sample accurate but
+    // / that doesn't matter on something like this
     scheduleToneEvent(event) {
       this.Tone.Transport.scheduleOnce((time) => {
         this.synth.triggerAttackRelease(event.note, event.duration);
@@ -312,20 +320,30 @@ export default {
     },
     scheduleHueAttack(hueIn) {
       this.Tone.Transport.scheduleOnce((time) => {
-        const lightInState = this.lightState.create().on().hsb(hueIn.h, hueIn.s, hueIn.l).transition(hueIn.duration * 1000);
+        console.log('IN')
+        const lightInState = this.lightState.create().on().hsb(hueIn.h, hueIn.s, hueIn.b).transition(hueIn.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightInState);
       }, (`+${String(hueIn.begin)}`));
     },
     scheduleHueRelease(hueOut) {
       this.Tone.Transport.scheduleOnce((time) => {
-        const lightOutState = this.lightState.create().hsb(hueOut.h, hueOut.s, hueOut.l).transition(hueOut.duration * 1000);
+        const lightOutState = this.lightState.create().hsb(hueOut.h, hueOut.s, hueOut.b).transition(hueOut.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightOutState);
       }, (`+${String(hueOut.begin)}`));
     },
   },
   mounted() {
+    // As soon as the component is mounted assign the config values so they can
+    /// be used by the synth patch
+    /// TODO: `Object.assign()` used to create a new object so sections can independently
+    /// change values. Rethink this later 
+    var configDeepCopy = Object.assign({}, this.config)
+    this.partialsConfig = configDeepCopy.partials;
+    this.chorusConfig = configDeepCopy.chorus;
+    this.EQ3Config = configDeepCopy.EQ3;
+    this.filterConfig = configDeepCopy.filter;
     this.createToneChain();
-    this.startSection();
+    // this.startSection();
   },
 };
 

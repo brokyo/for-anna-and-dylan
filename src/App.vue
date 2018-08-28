@@ -27,16 +27,16 @@
 		</div>
 		<section-controls
 			v-if="roomBuilt"
-			v-for="light in lightIds"
-			:key='light'
-			:lightId="light"
+			v-for="section in sections"
+			:key='section.id'
+			:lightId="section.id"
 			:Tone="Tone"
 			:lightState="lightState"
 			:hueApi="hueApi"
 			:h="h"
 			:s="s"
 			:b="b"
-			:config="sectionConfig"
+			:config="section.config"
 			>
 		</section-controls>
 	</div>
@@ -55,7 +55,7 @@ import roomConfig from '@/configs/room';
 import sectionConfig from '@/configs/section';
 
 export default {
-	// Register the `section` components with Vue so it can be used 
+  // Register the `section` components with Vue so it can be used
   components: {
     'section-controls': section,
   },
@@ -79,7 +79,20 @@ export default {
     	// Controls
       roomBuilt: false,
       useLights: false,
-      lightIds: [2],
+      sections: [
+        {
+          id: 2,
+          config: sectionConfig
+        },
+        {
+          id: 5,
+          config: sectionConfig
+        },
+        {
+          id: 6,
+          config: sectionConfig
+        }
+      ],
       // Hue Config
       h: {
         in: 310,
@@ -105,34 +118,34 @@ export default {
     };
   },
   methods: {
-  	///////////////////
+  	// /////////////////
   	// ADMIN METHODS //
-  	///////////////////
+  	// /////////////////
     lightsOff() {
-      this.lightIds.forEach((id) => {
-        this.hueApi.setLightState(id, this.lightState.create().off());
+      this.sections.forEach((section) => {
+        this.hueApi.setLightState(section.id, this.lightState.create().off());
       });
     },
     workLights() {
-      this.lightIds.forEach((id) => {
-        this.hueApi.setLightState(id, this.lightState.create().on().hsb(40, 65, 85));
+      this.sections.forEach((section) => {
+        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(40, 65, 85));
       });
     },
     testInColor() {
-      this.lightIds.forEach((id) => {
-        this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.in, this.s.in, this.b.in));
+      this.sections.forEach((section) => {
+        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.in, this.s.in, this.b.in));
       });
     },
     testOutColor() {
-      this.lightIds.forEach((id) => {
-        this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
+      this.sections.forEach((section) => {
+        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
     },
-  	///////////////////
+  	// /////////////////
     // SETUP METHODS //
-  	///////////////////
+  	// /////////////////
     // Builds Tone.JS chain starting at lineIn (what the section connects to)
-    // and going all the way to the speakers (`Tone.Master`). These params 
+    // and going all the way to the speakers (`Tone.Master`). These params
     // control the `room` or the effect chain that all sections share.
     // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
@@ -144,12 +157,20 @@ export default {
       this.reverbNode = new this.Tone.Freeverb(this.roomConfig.reverb);
       this.eq3Node = new this.Tone.EQ3(this.roomConfig.EQ3);
 
-      this.lineIn.chain(this.tremoloNode, this.vibratoNode, this.phaserNode, this.feedbackDelayNode, this.reverbNode, this.eq3Node, this.Tone.Master);
+      this.lineIn.chain(
+        this.tremoloNode, 
+        this.vibratoNode, 
+        this.phaserNode, 
+        this.feedbackDelayNode, 
+        this.reverbNode, 
+        this.eq3Node, 
+        this.Tone.Master
+      );
       this.roomBuilt = true;
     },
-  	//////////////////
+  	// ////////////////
     // INIT METHODS //
-  	//////////////////
+  	// ////////////////
     resetHue() {
       this.lightIds.forEach((id) => {
         this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
