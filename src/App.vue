@@ -3,43 +3,71 @@
 		<div id="controlButtons">
 			<button @click="lightsOff">Lights Off</button>
 			<button @click="workLights">Work Lights</button>
-			<button @click="testInColor">Test In Color</button>
-			<button @click="testOutColor">Test Out Color</button>
 		</div>
-		<h2>Universals</h2>
-		<div id="universalConfig">
-			<h4>Light Config</h4>
-			<div class="universalConfigSetting">
-				<label>Hue</label>
-				<input type="range" min="0" max="360" v-model.number="h.in">
-				<input type="range" min="0" max="360" v-model.number="h.out">
-			</div>
-			<div class="universalConfigSetting">
-				<label>Saturation</label>
-				<input type="range" min="0" max="100" v-model.number="s.in">
-				<input type="range" min="0" max="100" v-model.number="s.out">
-			</div>
-			<div class="universalConfigSetting">
-				<label>Brightness</label>
-				<input type="range" min="0" max="100" v-model.number="b.in">
-				<input type="range" min="0" max="100" v-model.number="b.out">
-			</div>
-		</div>
-		<section-controls
-			v-if="roomBuilt"
-			v-for="section in sections"
-			:key='section.id'
-			:lightId="section.id"
-			:Tone="Tone"
-			:lightState="lightState"
-			:hueApi="hueApi"
-			:h="h"
-			:s="s"
-			:b="b"
-			:config="section.config"
-			>
-		</section-controls>
-	</div>
+
+    <div class="config-section">
+  		<h2>Light</h2>
+  		<div id="light-config-container">
+  			<div>
+          <label class="config-label">Light In</label>
+          <div class="single-light-config">
+            <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueInRgb[0] + ',' + hueInRgb[1] + ',' + hueInRgb[2] + ')' }"></div>
+            <div class="light-config-params">
+      				<label>Hue</label>
+      				<input type="range" min="0" max="360" v-model.number="h.in">
+              <label>Saturation</label>
+              <input type="range" min="0" max="100" v-model.number="s.in">
+              <label>Brightness</label>
+              <input type="range" min="0" max="100" v-model.number="b.in">
+            </div>
+          </div>
+          <button @click="testInColor">Test In Color</button>
+  			</div>
+        <div>
+          <label class="config-label">Light Out</label>
+          <div class="single-light-config">
+            <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueOutRgb[0] + ',' + hueOutRgb[1] + ',' + hueOutRgb[2] + ')' }"></div>
+            <div class="light-config-params">
+              <label>Hue</label>
+              <input type="range" min="0" max="360" v-model.number="h.out">
+              <label>Saturation</label>
+              <input type="range" min="0" max="100" v-model.number="s.out">
+              <label>Brightness</label>
+              <input type="range" min="0" max="100" v-model.number="b.out">
+            </div>
+          </div>
+          <button @click="testOutColor">Test Out Color</button>
+        </div>
+		  </div>
+    </div>
+
+    <div class="config-section">
+      <h2>Select Section</h2>
+      <div id="sectionButtons">
+        <button 
+          v-for="section in sections"
+          :key="section.id"
+          @click="activeSection = section.id"
+        > {{section.id}} </button>
+      </div>
+  		<section-controls
+  			v-if="roomBuilt"
+  			v-for="section in sections"
+        v-show="activeSection == section.id"
+  			:key='section.id'
+  			:lightId="section.id"
+  			:Tone="Tone"
+  			:lightState="lightState"
+  			:hueApi="hueApi"
+  			:h="h"
+  			:s="s"
+  			:b="b"
+  			:config="section.config"
+  			>
+  		</section-controls>
+  	</div>
+
+  </div>
 </template>
 <script>
 // Pull in external dependencies
@@ -79,6 +107,7 @@ export default {
     	// Controls
       roomBuilt: false,
       useLights: false,
+      activeSection: 2,
       sections: [
         {
           id: 2,
@@ -117,6 +146,20 @@ export default {
       EQ3Node: {},
     };
   },
+  computed: {
+    hueInRgb() {
+      var h = this.h.in / 360
+      var s = this.s.in / 100
+      var b = this.b.in / 100 
+      return this.hsvToRgb(h, s, b)
+    },
+    hueOutRgb() {
+      var h = this.h.out / 360
+      var s = this.s.out/ 100
+      var b = this.b.out / 100 
+      return this.hsvToRgb(h, s, b)
+    }
+  },
   methods: {
   	// /////////////////
   	// ADMIN METHODS //
@@ -128,7 +171,7 @@ export default {
     },
     workLights() {
       this.sections.forEach((section) => {
-        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(40, 65, 85));
+        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(40, 65, 45));
       });
     },
     testInColor() {
@@ -140,6 +183,29 @@ export default {
       this.sections.forEach((section) => {
         this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
+    },
+    // //////////////////
+    // UTILITY METHODS //
+    // /////////////////
+    hsvToRgb(h, s, v) {
+      var r, g, b;
+
+      var i = Math.floor(h * 6);
+      var f = h * 6 - i;
+      var p = v * (1 - s);
+      var q = v * (1 - f * s);
+      var t = v * (1 - (1 - f) * s);
+
+      switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+      }
+
+      return [ r * 255, g * 255, b * 255 ];
     },
   	// /////////////////
     // SETUP METHODS //
@@ -189,6 +255,10 @@ export default {
 };
 </script>
 <style lang="scss">
+  body {
+    font-family: monospace;
+  }
+
 	button {
 		height: 40px;
 		width: 120px;
@@ -207,12 +277,29 @@ export default {
 		width: 250px;
 	}
 
-	#universalConfig {
-		display: flex;
-		flex-direction: row;
+  .lightPreview {
+    display: block;
+    height: 100px;
+    width: 100px;
+    margin-right: 20px;
+  }
 
-		.universalConfigSetting {
-			margin-right: 20px;
-		}
-	}
+  #light-config-container {
+    display: flex;
+  }
+
+  .single-light-config {
+    display: flex;
+    margin-right: 60px; 
+  }
+
+  .config-label {
+    font-size: 18px;
+    font-weight: 900;
+  }
+
+  .config-section {
+    margin-bottom: 60px;
+  }
+
 </style>

@@ -163,9 +163,11 @@ export default {
     // ///////////////////
     startSynth() {
       this.synth.triggerAttackRelease(220);
+      this.synthTest = true
     },
     stopSynth() {
       this.synth.triggerRelease(220)
+      this.synthTest = false
     },
     stopSection() {
       this.active = false;
@@ -320,7 +322,6 @@ export default {
     },
     scheduleHueAttack(hueIn) {
       this.Tone.Transport.scheduleOnce((time) => {
-        console.log('IN')
         const lightInState = this.lightState.create().on().hsb(hueIn.h, hueIn.s, hueIn.b).transition(hueIn.duration * 1000);
         this.hueApi.setLightState(this.lightId, lightInState);
       }, (`+${String(hueIn.begin)}`));
@@ -337,7 +338,7 @@ export default {
     /// be used by the synth patch
     /// TODO: `Object.assign()` used to create a new object so sections can independently
     /// change values. Rethink this later 
-    var configDeepCopy = Object.assign({}, this.config)
+    var configDeepCopy = JSON.parse(JSON.stringify(this.config));
     this.partialsConfig = configDeepCopy.partials;
     this.chorusConfig = configDeepCopy.chorus;
     this.EQ3Config = configDeepCopy.EQ3;
@@ -350,9 +351,6 @@ export default {
 </script>
 
 <style lang="scss">
-.sectionContainer {
-	margin-top: 80px;
-}
 input {
 	display: block;
 }
