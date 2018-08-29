@@ -44,9 +44,17 @@
     <div class="config-section">
       <h2>Room Timbre</h2>
       <div class="config-component-container">
-        <tremolo-config-component v-bind.sync="tremoloConfig" :oscillatorArray="oscillatorArray"></tremolo-config-component>
-        <vibrato-config-component v-bind.sync="vibratoConfig" :oscillatorArray="oscillatorArray"></vibrato-config-component>
-        <phaser-config-component v-bind.sync="phaserConfig"></phaser-config-component>
+        <tremolo-config-component 
+          v-bind.sync="tremoloConfig" 
+          :oscillatorArray="oscillatorArray"
+        ></tremolo-config-component>
+        <vibrato-config-component 
+          v-bind.sync="vibratoConfig" 
+          :oscillatorArray="oscillatorArray"
+        ></vibrato-config-component>
+        <phaser-config-component 
+          v-bind.sync="phaserConfig"
+        ></phaser-config-component>
         <feedback-delay-config-component v-bind.sync="feedbackDelayConfig"></feedback-delay-config-component>
         <reverb-config-component v-bind.sync="reverbConfig"></reverb-config-component>
         <eq3-config-component v-bind.sync="EQ3Config"></eq3-config-component>

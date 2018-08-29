@@ -5,11 +5,32 @@
         </div>
         <div class="config">
             <label>Audibility</label>
-            <input type="range" v-model.number="wet" min="0" max="1" step="0.05"></input>
+            <input 
+                :value.number="wet" 
+                @change="$emit('update:wet', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05"
+            />
             <label>Delay Time</label>
-            <input type="range" v-model.number="delayTime" min="0" max="1" step="0.005"></input>
+            <input 
+                :value.number="delayTime" 
+                @change="$emit('update:delayTime', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.005"
+            />
             <label>Feedback</label>
-            <input type="range" v-model.number="feedback" min="0" max="1" step="0.05"></input>
+            <input 
+                :value.number="feedback" 
+                @change="$emit('update:feedback', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05"
+            />
         </div>
         <div class="code">
             <pre>

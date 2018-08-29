@@ -5,17 +5,56 @@
 	    </div>
 	    <div class="config">
 	        <label>Audibility</label>
-	        <input type="range" v-model.number="wet" min="0" max="1" step="0.05"></input>
+	        <input 
+	        	:value.number="wet" 
+	        	@change="$emit('update:wet', $event.target.value)"
+	        	type="range" 
+	        	min="0" 
+	        	max="1" 
+	        	step="0.05"
+        	/>
 	        <label>Base Frequency</label>
-	        <input type="range" v-model.number="baseFrequency" min="0" max="20000" step="1"></input>
+	        <input 
+	        	:value.number="baseFrequency" 
+	        	@change="$emit('update:baseFrequency', $event.target.value)"
+	        	type="range" 
+	        	min="0" 
+	        	max="20000" 
+	        	step="1"
+        	/>
 	        <label>Frequency</label>
-	        <input type="range" v-model.number="frequency" min="0.1" max="10" step="0.1"></input>
+	        <input 
+	        	:value.number="frequency"
+	        	@change="$emit('update:frequency', $event.target.value)"
+	        	type="range" 
+	        	min="0.1" 
+	        	max="10" 
+	        	step="0.1"
+        	/>
 	        <label>Octaves</label>
-	        <input type="range" v-model.number="octaves" min="0" max="8" step="1"></input>
+	        <input 
+	        	:value.number="octaves" 
+	        	@change="$emit('update:octaves', $event.target.value)"
+	        	type="range" 
+	        	min="0" 
+	        	max="8" 
+	        	step="1"
+        	/>
 	        <label>Stages</label>
-	        <input type="range" v-model.number="stages" min="0" max="8" step="1"></input>
+	        <input 
+	        	:value.number="stages"
+	        	@change="$emit('update:stages', $event.target.value)"
+	        	type="range" 
+	        	 min="0" max="8" step="1"></input>
 	        <label>Q</label>
-	        <input type="range" v-model.number="Q" min="0" max="20" step="1"></input>
+	        <input 
+	        	:value.number="Q" 
+	        	@change="$emit('update:Q', $event.target.value)"
+	        	type="range" 
+	        	min="0" 
+	        	max="20" 
+	        	step="1"
+        	/>
 	    </div>
 	    <div class="code">
 	    	<pre>

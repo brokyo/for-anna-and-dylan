@@ -5,17 +5,45 @@
         </div>
         <div class="config">
             <label>Audibility</label>
-            <input type="range" v-model.number="wet" min="0" max="1" step="0.05"></input>
+            <input 
+                :value.number="wet" 
+                @change="$emit('update:wet', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05"
+            />
             <label>Frequency</label>
-            <input type="range" v-model.number="frequency" min="0.1" max="10" step="0.25"></input>
+            <input 
+                :value.number="frequency"
+                @change="$emit('update:frequency', $event.target.value)"
+                type="range" 
+                min="0.1" 
+                max="10" 
+                step="0.25"
+            />
             <label>Depth</label>
-            <input type="range" v-model.number="depth" min="0" max="1" step="0.05"></input>
+            <input 
+                :value.number="depth"
+                @change="$emit('update:depth', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05"
+            />
             <label>Oscillator</label>
-            <select v-model="type">
+            <select :value="type" @change="$emit('update:type', $event.target.value)">
                 <option v-for="oscillator in oscillatorArray">{{oscillator}}</option>
             </select>
             <label>Spread</label>
-            <input type="range" v-model.number="spread" min="0" max="180" step="1"></input>
+            <input 
+                :value.number="spread" 
+                @change="$emit('update:spread', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="180" 
+                step="1"
+            />
         </div>
         <div class="code">
         	<pre>

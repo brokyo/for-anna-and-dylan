@@ -5,11 +5,29 @@
         </div>
         <div class="config">
             <label>Low</label>
-            <input type="range" max="0" min="-30" v-model="low"></input>
+            <input 
+                :value.number="low"
+                @change="$emit('update:low', $event.target.value)"
+                type="range" 
+                max="0" 
+                min="-30" 
+            />
             <label>Medium</label>
-            <input type="range" max="0" min="-30" v-model="mid"></input>
+            <input 
+                :value.number="mid"
+                @change="$emit('update:mid', $event.target.value)"
+                type="range" 
+                max="0" 
+                min="-30" 
+            />
             <label>High</label>
-            <input type="range" max="0" min="-30" v-model="high"></input>
+            <input 
+                :value.number="high"
+                @change="$emit('update:high', $event.target.value)"
+                type="range" 
+                max="0" 
+                min="-30" 
+            />
         </div>
         <div class="code">
             <pre>

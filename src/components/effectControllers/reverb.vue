@@ -5,9 +5,22 @@
         </div>
         <div class="config">
             <label>Room Size</label>
-            <input type="range" min="0" max="1" step="0.05" v-model="roomSize"></input>
+            <input 
+                :value.number="roomSize"
+                @change="$emit('update:roomSize', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="1" 
+                step="0.05" 
+            />
             <label>Dampening</label>
-            <input type="range" min="0" max="2000" v-model="dampening"></input>
+            <input 
+                :value.numer="dampening"
+                @change="$emit('update:dampening', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="2000" 
+            />
         </div>
         <div class="code">
             <pre>

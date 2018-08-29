@@ -5,19 +5,31 @@
         </div>
         <div class="config">
             <label>Frequency</label>
-            <input type="range" v-model.number="frequency" min="0" max="2000"></input>
+            <input 
+                :value.number="frequency" 
+                @change="$emit('update:frequency', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="2000"
+            />
             <label>Filter Type</label>
-            <select v-model="type">
+            <select :value="type" @change="$emit('update:type', $event.target.value)">
                 <option v-for="filterType in filterArray">{{filterType}}</option>
             </select>
             <label>Filter Rolloff</label>
-            <select v-model.number="rolloff">
+            <select :value.number="rolloff" @change="$emit('update:rolloff', $event.target.value)">
                 <option v-for="rolloff in rolloffArray">
                     <select>{{rolloff}}</select>
                 </option>
             </select>
             <label>Q</label>
-            <input type="range" v-model.numer="Q" min="0" max="50"></input>
+            <input 
+                :value.numer="Q" 
+                @change="$emit('update:Q', $event.target.value)"
+                type="range" 
+                min="0" 
+                max="50"
+            />
         </div>
         <div class="code">
             <pre>
