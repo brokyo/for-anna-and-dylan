@@ -1,39 +1,74 @@
 <template>
 	<div>
 		<div id="controlButtons">
+      <button @click="startWaves">Start Waves</button>
+      <button @click="stopWaves">Stop Waves</button>
+      <button @click="workLights">Work Lights</button>
 			<button @click="lightsOff">Lights Off</button>
-			<button @click="workLights">Work Lights</button>
 		</div>
 
     <div class="config-section">
   		<h2>Light</h2>
   		<div class="config-component-container">
-  			<div>
+  			<div class="light-config">
           <label class="config-label">Light In</label>
           <div class="single-light-config">
             <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueInRgb[0] + ',' + hueInRgb[1] + ',' + hueInRgb[2] + ')' }"></div>
             <div class="light-config-params">
       				<label>Hue</label>
-      				<input type="range" min="0" max="360" v-model.number="h.in">
+      				<input 
+                v-model.number="h.in"
+                type="range" 
+                min="0" 
+                max="360" 
+              />
               <label>Saturation</label>
-              <input type="range" min="0" max="100" v-model.number="s.in">
+              <input 
+                v-model.number="s.in"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
               <label>Brightness</label>
-              <input type="range" min="0" max="100" v-model.number="b.in">
+              <input 
+                v-model.number="b.in"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
             </div>
           </div>
           <button @click="testInColor">Test In Color</button>
   			</div>
-        <div>
+        <div class="light-config">
           <label class="config-label">Light Out</label>
           <div class="single-light-config">
-            <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueOutRgb[0] + ',' + hueOutRgb[1] + ',' + hueOutRgb[2] + ')' }"></div>
+            <div 
+              class="lightPreview light-config-meta" 
+              :style="{'background-color': 'rgb('+ hueOutRgb[0] + ',' + hueOutRgb[1] + ',' + hueOutRgb[2] + ')' }">
+            </div>
             <div class="light-config-params">
               <label>Hue</label>
-              <input type="range" min="0" max="360" v-model.number="h.out">
+              <input 
+                v-model.number="h.out"
+                type="range" 
+                min="0" 
+                max="360" 
+              />
               <label>Saturation</label>
-              <input type="range" min="0" max="100" v-model.number="s.out">
+              <input 
+                v-model.number="s.out"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
               <label>Brightness</label>
-              <input type="range" min="0" max="100" v-model.number="b.out">
+              <input 
+                v-model.number="b.out"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
             </div>
           </div>
           <button @click="testOutColor">Test Out Color</button>
@@ -42,48 +77,63 @@
     </div>
 
     <div class="config-section">
+      <h2>Scale</h2>
+      <input
+        class="input-array"
+        v-for="(note, index) in scale"
+        v-model='scale[index]'
+      />
+    </div>
+
+    <div class="config-section">
       <h2>Room Timbre</h2>
       <div class="config-component-container">
-        <tremolo-config-component 
-          v-bind.sync="tremoloConfig" 
+        <tremolo-config-component
+          v-bind.sync="tremoloConfig"
           :oscillatorArray="oscillatorArray"
         ></tremolo-config-component>
-        <vibrato-config-component 
-          v-bind.sync="vibratoConfig" 
+        <vibrato-config-component
+          v-bind.sync="vibratoConfig"
           :oscillatorArray="oscillatorArray"
         ></vibrato-config-component>
-        <phaser-config-component 
+        <phaser-config-component
           v-bind.sync="phaserConfig"
         ></phaser-config-component>
-        <feedback-delay-config-component v-bind.sync="feedbackDelayConfig"></feedback-delay-config-component>
-        <reverb-config-component v-bind.sync="reverbConfig"></reverb-config-component>
-        <eq3-config-component v-bind.sync="EQ3Config"></eq3-config-component>
+        <feedback-delay-config-component
+          v-bind.sync="feedbackDelayConfig"
+        ></feedback-delay-config-component>
+        <reverb-config-component
+          v-bind.sync="reverbConfig"
+        ></reverb-config-component>
+        <eq3-config-component
+          v-bind.sync="EQ3Config"
+        ></eq3-config-component>
       </div>
     </div>
 
     <div class="config-section">
       <h2>Synth Timbre</h2>
       <div class="config-component-container">
-        <partials-config-component v-bind:partials.sync="sectionConfig.partials"></partials-config-component>
-        <chorus-config-component v-bind.sync="sectionConfig.chorus" :oscillatorArray="oscillatorArray"></chorus-config-component>
-        <eq3-config-component v-bind.sync="sectionConfig.EQ3"></eq3-config-component>
-        <filter-config-component v-bind.sync="sectionConfig.filter"></filter-config-component>
+        <partials-config-component
+          v-bind:partials.sync="sectionConfig.partials"
+        ></partials-config-component>
+        <chorus-config-component
+          v-bind.sync="sectionConfig.chorus"
+          :oscillatorArray="oscillatorArray"
+        ></chorus-config-component>
+        <eq3-config-component
+          v-bind.sync="sectionConfig.EQ3"
+        ></eq3-config-component>
+        <filter-config-component
+          v-bind.sync="sectionConfig.filter"
+        ></filter-config-component>
       </div>
     </div>
 
     <div class="config-section">
-      <h2>Select Section</h2>
-      <div id="sectionButtons">
-        <button 
-          v-for="section in sections"
-          :key="section.id"
-          @click="activeSection = section.id"
-        > {{section.id}} </button>
-      </div>
   		<section-controls
   			v-if="roomBuilt"
   			v-for="section in sections"
-        v-show="activeSection == section.id"
   			:key='section.id'
   			:lightId="section.id"
   			:Tone="Tone"
@@ -93,6 +143,7 @@
   			:s="s"
   			:b="b"
   			:config="section.config"
+        :scale="scale"
   			>
   		</section-controls>
   	</div>
@@ -109,21 +160,22 @@ import roomConfig from '@/configs/room';
 import sectionConfig from '@/configs/section';
 
 // Import needed components
-// // `section` is the launcher & controller for each light system
 // // Room Effects
-import section from '@/components/section.vue';
-import tremoloConfigComponent from '@/components/effectControllers/tremolo.vue'
-import vibratoConfigComponent from '@/components/effectControllers/vibrato.vue'
-import phaserConfigComponent from '@/components/effectControllers/phaser.vue'
-import feedbackDelayConfigComponent from '@/components/effectControllers/feedbackDelay.vue'
-import reverbConfigComponent from '@/components/effectControllers/reverb.vue'
-import eq3ConfigComponent from '@/components/effectControllers/eq3.vue'
+import tremoloConfigComponent from '@/components/effectControllers/tremolo.vue';
+import vibratoConfigComponent from '@/components/effectControllers/vibrato.vue';
+import phaserConfigComponent from '@/components/effectControllers/phaser.vue';
+import feedbackDelayConfigComponent from '@/components/effectControllers/feedbackDelay.vue';
+import reverbConfigComponent from '@/components/effectControllers/reverb.vue';
+import eq3ConfigComponent from '@/components/effectControllers/eq3.vue';
 
 // Synth Patch
-import partialsConfigComponent from '@/components/effectControllers/partials.vue'
-import chorusConfigComponent from '@/components/effectControllers/chorus.vue'
-import filterConfigComponent from '@/components/effectControllers/filter.vue'
+import section from '@/components/section.vue';
+import partialsConfigComponent from '@/components/effectControllers/partials.vue';
+import chorusConfigComponent from '@/components/effectControllers/chorus.vue';
+import filterConfigComponent from '@/components/effectControllers/filter.vue';
 
+
+import { eventBus } from '@/main.js';
 export default {
   // Register the `section` components with Vue so it can be used
   components: {
@@ -136,7 +188,7 @@ export default {
     'eq3-config-component': eq3ConfigComponent,
     'partials-config-component': partialsConfigComponent,
     'chorus-config-component': chorusConfigComponent,
-    'filter-config-component': filterConfigComponent
+    'filter-config-component': filterConfigComponent,
   },
   // Do this as soon as the page is created
   created() {
@@ -161,16 +213,16 @@ export default {
       sections: [
         {
           id: 2,
-          config: sectionConfig
+          config: sectionConfig,
         },
         {
           id: 5,
-          config: sectionConfig
+          config: sectionConfig,
         },
         {
           id: 6,
-          config: sectionConfig
-        }
+          config: sectionConfig,
+        },
       ],
       // Hue Config
       h: {
@@ -186,6 +238,7 @@ export default {
         out: 1,
       },
       // Tone Universals
+      scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
       // Tone Room Config
       tremoloConfig: {},
@@ -211,40 +264,40 @@ export default {
   },
   watch: {
     tremoloConfig: {
-      handler () {
+      handler() {
         this.tremoloNode.set(this.tremoloConfig);
       },
-      deep: true
+      deep: true,
     },
     vibratoConfig: {
-      handler () {
+      handler() {
         this.vibratoNode.set(this.vibratoConfig);
       },
-      deep: true
+      deep: true,
     },
     phaserConfig: {
-      handler () {
-        this.phaserNode.set(this.phaserConfig)
+      handler() {
+        this.phaserNode.set(this.phaserConfig);
       },
-      deep: true
+      deep: true,
     },
     feedbackDelayConfig: {
-      handler () {
-        this.feedbackDelayNode.set(this.feedbackDelayConfig)        
+      handler() {
+        this.feedbackDelayNode.set(this.feedbackDelayConfig);
       },
-      deep: true
+      deep: true,
     },
     reverbConfig: {
-      handler () {
-        this.reverbNode.set(this.reverbConfig)
+      handler() {
+        this.reverbNode.set(this.reverbConfig);
       },
-      deep: true
+      deep: true,
     },
     EQ3Config: {
-      handler () {
-        this.eq3Node.set(this.EQ3Config)
+      handler() {
+        this.eq3Node.set(this.EQ3Config);
       },
-      deep: true
+      deep: true,
     },
     partialsConfig: {
       handler() {
@@ -257,21 +310,21 @@ export default {
         });
       },
       deep: true,
-    }
+    },
   },
   computed: {
     hueInRgb() {
-      var h = this.h.in / 360
-      var s = this.s.in / 100
-      var b = this.b.in / 100 
-      return this.hsvToRgb(h, s, b)
+      const h = this.h.in / 360;
+      const s = this.s.in / 100;
+      const b = this.b.in / 100;
+      return this.hsvToRgb(h, s, b);
     },
     hueOutRgb() {
-      var h = this.h.out / 360
-      var s = this.s.out/ 100
-      var b = this.b.out / 100 
-      return this.hsvToRgb(h, s, b)
-    }
+      const h = this.h.out / 360;
+      const s = this.s.out / 100;
+      const b = this.b.out / 100;
+      return this.hsvToRgb(h, s, b);
+    },
   },
   methods: {
   	// /////////////////
@@ -301,13 +354,15 @@ export default {
     // UTILITY METHODS //
     // /////////////////
     hsvToRgb(h, s, v) {
-      var r, g, b;
+      let r,
+        g,
+        b;
 
-      var i = Math.floor(h * 6);
-      var f = h * 6 - i;
-      var p = v * (1 - s);
-      var q = v * (1 - f * s);
-      var t = v * (1 - (1 - f) * s);
+      const i = Math.floor(h * 6);
+      const f = h * 6 - i;
+      const p = v * (1 - s);
+      const q = v * (1 - f * s);
+      const t = v * (1 - (1 - f) * s);
 
       switch (i % 6) {
         case 0: r = v, g = t, b = p; break;
@@ -318,7 +373,7 @@ export default {
         case 5: r = v, g = p, b = q; break;
       }
 
-      return [ r * 255, g * 255, b * 255 ];
+      return [r * 255, g * 255, b * 255];
     },
   	// /////////////////
     // SETUP METHODS //
@@ -337,13 +392,13 @@ export default {
       this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
 
       this.lineIn.chain(
-        this.tremoloNode, 
-        this.vibratoNode, 
-        this.phaserNode, 
-        this.feedbackDelayNode, 
-        this.reverbNode, 
-        this.eq3Node, 
-        this.Tone.Master
+        this.tremoloNode,
+        this.vibratoNode,
+        this.phaserNode,
+        this.feedbackDelayNode,
+        this.reverbNode,
+        this.eq3Node,
+        this.Tone.Master,
       );
       this.roomBuilt = true;
     },
@@ -351,25 +406,35 @@ export default {
     // INIT METHODS //
   	// ////////////////
     configureToneEffects() {
-      this.tremoloConfig = roomConfig.tremolo
-      this.vibratoConfig = roomConfig.vibrato
-      this.phaserConfig = roomConfig.phaser
-      this.feedbackDelayConfig = roomConfig.feedbackDelay
-      this.reverbConfig = roomConfig.reverb
-      this.EQ3Config = roomConfig.EQ3
+      this.tremoloConfig = roomConfig.tremolo;
+      this.vibratoConfig = roomConfig.vibrato;
+      this.phaserConfig = roomConfig.phaser;
+      this.feedbackDelayConfig = roomConfig.feedbackDelay;
+      this.reverbConfig = roomConfig.reverb;
+      this.EQ3Config = roomConfig.EQ3;
     },
     resetHue() {
       this.lightIds.forEach((id) => {
         this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
     },
+    /////////////////////
+    // CONTROL METHODS //
+    /////////////////////
+    startWaves() {
+      eventBus.$emit('start-waves');
+    },
+    stopWaves() {
+      eventBus.$emit('stop-waves');
+    }
   },
   // Do this as soon as the component mounts
   mounted() {
+    console.log(this.$refs)
     if (this.useLights) {
       this.resetHue();
     }
-    this.configureToneEffects()
+    this.configureToneEffects();
     this.createRoomLine();
     // `Tone.Transport.start()` must be started before events can be scheduled
     this.Tone.Transport.start();
@@ -393,17 +458,29 @@ export default {
 
 	input {
 		display: block;
+    margin-bottom: 5px;
+    width: 100%;
 	}
 
-	input[type="range"] {
-		width: 250px;
-	}
+  select {
+    display: block;
+    margin-bottom: 5px;
+  }
+
 
   .lightPreview {
     display: block;
     height: 120px;
     width: 120px;
     margin-right: 20px;
+  }
+
+  .light-config {
+    flex-grow: 1
+  }
+
+  .light-config-params {
+    flex-grow: 1
   }
 
   .config-component-container {
@@ -413,24 +490,55 @@ export default {
 
   .single-light-config {
     display: flex;
-    margin-right: 60px; 
+    margin-right: 60px;
   }
 
   .config-label {
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 15px;
+    font-weight: 100;
+    font-style: italic;
+    margin-bottom: 10px;
   }
 
   .config-section {
     margin-bottom: 60px;
+
+    h2 {
+      font-style: italic;
+      font-weight: 100;
+      text-transform: uppercase;
+    }
+  }
+
+  .input-array {
+    width: 20px;
+    margin-right: 5px;
+    display: inline;
   }
 
   .patchConfig {
     margin-right: 40px;
+    width: 300px;
+    margin-bottom: 20px;
+    border: 1px solid black;
+    flex-grow: 1;
 
-    .title {
-      font-size: 22px;
+    .config {
+      padding: 8px;
+    }
+  
+    .config-label {
+      font-size: 15px;
+      font-weight: 100;
+      font-style: italic;
       margin-bottom: 10px;
+      background-color: #d5d5ff;
+      padding: 8px;
+    }
+
+
+    .code {
+      padding: 8px
     }
   }
 

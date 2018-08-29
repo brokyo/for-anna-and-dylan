@@ -2,64 +2,88 @@
 in it are section-specific once on page so changing attack.min for section 2,
 for example, does not change it for section 3 -->
 <template>
-	<div class="sectionContainer">
-		<h2>Section {{lightId}}</h2>
-		<button @click="startSynth" v-if="!synthTest">Test Synth</button>
-    <button @click="stopSynth" v-else>Stop Synth</button>
-		<button v-if="active" @click="stopSection">Stop</button>
-		<button v-else @click="startSection">Make Waves</button>
-		<div>
-			<h3>Timing</h3>
-			<div class="configContainer">
-				<div class="timingItem">
-					<label>Wave Rest</label>
-					<input v-model.number="waveRest">
-				</div>
-				<div class="timingItem">
-					<label>Max Duration</label>
-					<input v-model.number="duration.max">
-					<label>Min Duration</label>
-					<input v-model.number="duration.min">
-				</div>
-				<div class="timingItem">
-					<label>Start Shift</label>
-					<input v-model.number="startShift">
-				</div>
-			</div>
-		</div>
-<!-- 		<div id="timbreConfig">
-			<h3>Timbre</h3>
-			<div class="configContainer">
-				<div class="timbreItem">
-					<h4>Partials</h4>
-					<input
-						type="range"
-						min="0"
-						max="1"
-						step="0.005"
-            v-for="(partial, index) in partialsConfig"
-						v-model.number="partialsConfig[index]"
-						:key="index"
-					>
-				</div>
-				<div class="timbreItem">
-					<h4>EQ3</h4>
-					<label>Low</label>
-					<input type="range" max="0" min="-30" v-model="EQ3Config.low">
-					<label>Medium</label>
-					<input type="range" max="0" min="-30" v-model="EQ3Config.mid">
-					<label>High</label>
-					<input type="range" max="0" min="-30" v-model="EQ3Config.high">
-				</div>
-			</div>
-		</div> -->
-	</div>
+	<div class="config-section">
+		<h2>Section: {{lightId}} | Synth: {{config.name}}</h2>
+		<!-- <button @click="startSynth" v-if="!synthTest">Test Synth</button> -->
+    <!-- <button @click="stopSynth" v-else>Stop Synth</button> -->
+		<!-- <button v-if="active" @click="stopSection">Stop</button> -->
+    <div class="config-component-container">
+      <div class="patchConfig">
+        <div class="config-label">
+          <label>wave config</label>
+        </div>
+        <div class="config">
+          <label class="label-break">Possible Octaves</label>
+          <input
+            class="input-array"
+            v-for="(octave, index) in octaves"
+            v-model="octaves[index]"
+          />
+          <label class="label-break">Possible Number Of Events</label>
+          <input
+            class="input-array"
+            v-for="(event, index) in numEvents"
+            v-model="numEvents[index]"
+          />
+          <label class="label-break">Max Wave Rest</label>
+          <input 
+            v-model.number="waveRest"
+            type="number"
+          />
+          <label>Max Start Delay</label>
+          <input 
+            type="number"
+            v-model.number="startShift"
+          />
+        </div>
+      </div>
+
+      <div class="patchConfig">
+        <div class="config-label">
+          <label>note</label>
+        </div>
+        <div class="config">
+          <label>Attack Max</label>
+          <input 
+            v-model.number="attack.max"
+            type="number"
+          />
+          <label>Attack Min</label>
+          <input 
+            v-model.number="attack.min"
+            type="number"
+          />
+          <label>Release Max</label>
+          <input 
+            v-model.number="release.max"
+            type="number"
+          />
+          <label>Release Min</label>
+          <input 
+            v-model.number="release.min"
+            type="number"
+          />
+          <label>Duration Max</label>
+          <input
+            v-model.number="duration.max"
+            type="number"
+          />
+          <label>Duration Min</label>
+          <input
+            v-model.number="duration.min"
+            type="number"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
+import { eventBus } from '@/main.js';
 export default {
   // Values shared from `app.vue`. Any changes that happen there will end up here
-  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config', 'scale'],
   // Reactive data we'll want the ability to change while the program is running
   data() {
     return {
@@ -69,7 +93,6 @@ export default {
       synthTest: false,
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
-      names: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       octaves: ['3', '4', '5'],
       numEvents: ['1', '1', '3'],
       hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
@@ -124,9 +147,9 @@ export default {
     },
     chorusConfig: {
       handler() {
-        this.chorusNode.set(this.chorusConfig)
+        this.chorusNode.set(this.chorusConfig);
       },
-      deep: true
+      deep: true,
     },
     EQ3Config: {
       handler() {
@@ -136,10 +159,10 @@ export default {
     },
     filterConfig: {
       handler() {
-        this.filterNode.set(this.filterConfig)
+        this.filterNode.set(this.filterConfig);
       },
-      deep: true
-    }
+      deep: true,
+    },
   },
   methods: {
   	// /////////////
@@ -163,11 +186,11 @@ export default {
       this.lineOut = new this.Tone.Volume(-5);
 
       this.synth.chain(
-        this.chorusNode, 
-        this.eq3Node, 
-        this.filterNode, 
-        this.lineOut, 
-        this.$parent.lineIn
+        this.chorusNode,
+        this.eq3Node,
+        this.filterNode,
+        this.lineOut,
+        this.$parent.lineIn,
       );
     },
     // ///////////////////
@@ -175,11 +198,11 @@ export default {
     // ///////////////////
     startSynth() {
       this.synth.triggerAttackRelease(220);
-      this.synthTest = true
+      this.synthTest = true;
     },
     stopSynth() {
-      this.synth.triggerRelease(220)
-      this.synthTest = false
+      this.synth.triggerRelease(220);
+      this.synthTest = false;
     },
     stopSection() {
       this.active = false;
@@ -219,13 +242,13 @@ export default {
 
       // Generate notes played and schedule them
       for (let i = 0; i < eventCount; i++) {
-        const nameIndex = Math.floor(Math.random() * this.names.length);
+        const scaleIndex = Math.floor(Math.random() * this.scale.length);
         const octaveIndex = Math.floor(Math.random() * this.octaves.length);
 
         // Play params
-        const name = this.names[nameIndex];
+        const scale = this.scale[scaleIndex];
         const octave = this.octaves[octaveIndex];
-        const note = name + octave;
+        const note = scale + octave;
 
         // Timing params
         const duration = (Math.random() * this.duration.max) + this.duration.min;
@@ -347,32 +370,40 @@ export default {
   },
   mounted() {
     // As soon as the component is mounted assign the config values so they can
-    /// be used by the synth patch
-    /// TODO: `Object.assign()` used to create a new object so sections can independently
-    /// change values. Rethink this later 
+    // / be used by the synth patch
+    // / TODO: `Object.assign()` used to create a new object so sections can independently
+    // / change values. Rethink this later
     // var configDeepCopy = JSON.parse(JSON.stringify(this.config));
     this.partialsConfig = this.config.partials;
     this.chorusConfig = this.config.chorus;
     this.EQ3Config = this.config.EQ3;
     this.filterConfig = this.config.filter;
+    this.scale = this.scale
     this.createToneChain();
     // this.startSection();
+
+    eventBus.$on('start-waves', response => this.startSection())
+    eventBus.$on('stop-waves', response => this.active = false)
+
   },
 };
 
 </script>
 
 <style lang="scss">
-input {
-	display: block;
-}
-label {
-	display: block;
-}
-.configContainer {
-	display: flex;
-}
-.timbreItem {
+.section-config {
 	margin-right: 60px;
 }
+
+input[type="number"]{
+  width: 40px;
+}
+
+.label-break {
+  display: block;
+  margin-bottom: 5px;
+  margin-top: 5px;
+}
+
+
 </style>

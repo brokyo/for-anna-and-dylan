@@ -1,39 +1,39 @@
 <template>
     <div id="reverb" class="patchConfig">
-        <div class="title">
-            <label>Reverb</label>
+        <div class="config-label">
+            <label>reverb</label>
         </div>
         <div class="config">
             <label>Room Size</label>
-            <input 
+            <input
                 :value.number="roomSize"
                 @change="$emit('update:roomSize', $event.target.value)"
-                type="range" 
-                min="0" 
-                max="1" 
-                step="0.05" 
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
             />
             <label>Dampening</label>
-            <input 
+            <input
                 :value.numer="dampening"
                 @change="$emit('update:dampening', $event.target.value)"
-                type="range" 
-                min="0" 
-                max="2000" 
+                type="range"
+                min="0"
+                max="2000"
             />
         </div>
-        <div class="code">
-            <pre>
-            	roomSize: {{roomSize}}
-            	dampening: {{dampening}}
-            </pre>
-        </div>
+        <p class="code">
+            {
+                roomSize: {{roomSize}},
+                dampening: {{dampening}}                
+            }
+        </p>
     </div>
 </template>
 <script>
 export default {
-	props: ['roomSize', 'dampening']
-}
+  props: ['roomSize', 'dampening'],
+};
 </script>
 <style>
 </style>

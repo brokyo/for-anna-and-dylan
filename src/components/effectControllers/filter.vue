@@ -1,15 +1,15 @@
 <template>
     <div id="filter" class="patchConfig">
-        <div class="title">
+        <div class="config-label">
             <label>filter</label>
         </div>
         <div class="config">
             <label>Frequency</label>
-            <input 
-                :value.number="frequency" 
+            <input
+                :value.number="frequency"
                 @change="$emit('update:frequency', $event.target.value)"
-                type="range" 
-                min="0" 
+                type="range"
+                min="0"
                 max="2000"
             />
             <label>Filter Type</label>
@@ -23,33 +23,33 @@
                 </option>
             </select>
             <label>Q</label>
-            <input 
-                :value.numer="Q" 
+            <input
+                :value.numer="Q"
                 @change="$emit('update:Q', $event.target.value)"
-                type="range" 
-                min="0" 
+                type="range"
+                min="0"
                 max="50"
             />
         </div>
-        <div class="code">
-            <pre>
-            	frequency: {{frequency}}
-            	type: {{type}}
-            	rolloff: {{rolloff}}
-            	Q: {{Q}}
-            </pre>
-        </div>
+        <p class="code">
+        {
+            frequency: {{frequency}},
+            type: {{type}},
+            rolloff: {{rolloff}},
+            Q: {{Q}},   
+        }
+        </p>
     </div>
 </template>
 <script>
 export default {
-	props: ['frequency', 'type', 'rolloff', 'Q'],
-	data() {
-		return {
-            filterArray: ['bandpass', 'lowpass', 'highpass', 'lowshelf', 'highshelf'],
-            rolloffArray: [-12, -24, -48]
-		}
-	}
+  props: ['frequency', 'type', 'rolloff', 'Q'],
+  data() {
+    return {
+      filterArray: ['bandpass', 'lowpass', 'highpass', 'lowshelf', 'highshelf'],
+      rolloffArray: [-12, -24, -48],
+    };
+  },
 
-}
+};
 </script>
