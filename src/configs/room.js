@@ -26,7 +26,7 @@ export default {
     feedback: 0.5,
     wet: 0,
   },
-  reverbConfig: {
+  reverb: {
     dampening: 3000,
     roomSize: 0,
   },

@@ -7,7 +7,7 @@
 
     <div class="config-section">
   		<h2>Light</h2>
-  		<div id="light-config-container">
+  		<div class="config-component-container">
   			<div>
           <label class="config-label">Light In</label>
           <div class="single-light-config">
@@ -39,6 +39,28 @@
           <button @click="testOutColor">Test Out Color</button>
         </div>
 		  </div>
+    </div>
+
+    <div class="config-section">
+      <h2>Room Timbre</h2>
+      <div class="config-component-container">
+        <tremolo-config-component v-bind.sync="tremoloConfig" :oscillatorArray="oscillatorArray"></tremolo-config-component>
+        <vibrato-config-component v-bind.sync="vibratoConfig" :oscillatorArray="oscillatorArray"></vibrato-config-component>
+        <phaser-config-component v-bind.sync="phaserConfig"></phaser-config-component>
+        <feedback-delay-config-component v-bind.sync="feedbackDelayConfig"></feedback-delay-config-component>
+        <reverb-config-component v-bind.sync="reverbConfig"></reverb-config-component>
+        <eq3-config-component v-bind.sync="EQ3Config"></eq3-config-component>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <h2>Synth Timbre</h2>
+      <div class="config-component-container">
+        <partials-config-component v-bind:partials.sync="sectionConfig.partials"></partials-config-component>
+        <chorus-config-component v-bind.sync="sectionConfig.chorus" :oscillatorArray="oscillatorArray"></chorus-config-component>
+        <eq3-config-component v-bind.sync="sectionConfig.EQ3"></eq3-config-component>
+        <filter-config-component v-bind.sync="sectionConfig.filter"></filter-config-component>
+      </div>
     </div>
 
     <div class="config-section">
@@ -74,24 +96,44 @@
 import Tone from 'tone';
 import NodeHueApi from 'node-hue-api';
 
-// Import needed components
-// // `section` is the launcher & controller for each light system
-import section from '@/components/section.vue';
-
 // Timbre configs pulled in from external files for easier editing
 import roomConfig from '@/configs/room';
 import sectionConfig from '@/configs/section';
+
+// Import needed components
+// // `section` is the launcher & controller for each light system
+// // Room Effects
+import section from '@/components/section.vue';
+import tremoloConfigComponent from '@/components/effectControllers/tremolo.vue'
+import vibratoConfigComponent from '@/components/effectControllers/vibrato.vue'
+import phaserConfigComponent from '@/components/effectControllers/phaser.vue'
+import feedbackDelayConfigComponent from '@/components/effectControllers/feedbackDelay.vue'
+import reverbConfigComponent from '@/components/effectControllers/reverb.vue'
+import eq3ConfigComponent from '@/components/effectControllers/eq3.vue'
+
+// Synth Patch
+import partialsConfigComponent from '@/components/effectControllers/partials.vue'
+import chorusConfigComponent from '@/components/effectControllers/chorus.vue'
+import filterConfigComponent from '@/components/effectControllers/filter.vue'
 
 export default {
   // Register the `section` components with Vue so it can be used
   components: {
     'section-controls': section,
+    'tremolo-config-component': tremoloConfigComponent,
+    'vibrato-config-component': vibratoConfigComponent,
+    'phaser-config-component': phaserConfigComponent,
+    'feedback-delay-config-component': feedbackDelayConfigComponent,
+    'reverb-config-component': reverbConfigComponent,
+    'eq3-config-component': eq3ConfigComponent,
+    'partials-config-component': partialsConfigComponent,
+    'chorus-config-component': chorusConfigComponent,
+    'filter-config-component': filterConfigComponent
   },
   // Do this as soon as the page is created
   created() {
     // Tone.js and timbre configs
     this.Tone = Tone;
-    this.roomConfig = roomConfig;
     this.sectionConfig = sectionConfig;
 
     // Philips Hue Api
@@ -135,16 +177,79 @@ export default {
         in: 25,
         out: 1,
       },
-      // Tone Config
-      // // Set up objects to serve as nodes in patch chain
+      // Tone Universals
+      oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
+      // Tone Room Config
+      tremoloConfig: {},
+      vibratoConfig: {},
+      phaserConfig: {},
+      feedbackDelayConfig: {},
+      reverbConfig: {},
+      EQ3Config: {},
+      // Tone Synth Config
+      partialsConfig: {},
+      chorusConfig: {},
+      EQ3SynthConfig: {},
+      filterConfig: {},
+      // Set up objects to serve as nodes in patch chain
       lineIn: {},
       tremoloNode: {},
       vibratoNode: {},
       phaserNode: {},
       feedbackDelayNode: {},
       reverbNode: {},
-      EQ3Node: {},
+      eq3Node: {},
     };
+  },
+  watch: {
+    tremoloConfig: {
+      handler () {
+        this.tremoloNode.set(this.tremoloConfig);
+      },
+      deep: true
+    },
+    vibratoConfig: {
+      handler () {
+        this.vibratoNode.set(this.vibratoConfig);
+      },
+      deep: true
+    },
+    phaserConfig: {
+      handler () {
+        this.phaserNode.set(this.phaserConfig)
+      },
+      deep: true
+    },
+    feedbackDelayConfig: {
+      handler () {
+        this.feedbackDelayNode.set(this.feedbackDelayConfig)        
+      },
+      deep: true
+    },
+    reverbConfig: {
+      handler () {
+        this.reverbNode.set(this.reverbConfig)
+      },
+      deep: true
+    },
+    EQ3Config: {
+      handler () {
+        this.eq3Node.set(this.EQ3Config)
+      },
+      deep: true
+    },
+    partialsConfig: {
+      handler() {
+        const setArray = [];
+        this.partialsConfig.forEach(partial => setArray.push(partial));
+        this.synth.set({
+          oscillator: {
+            partials: setArray,
+          },
+        });
+      },
+      deep: true,
+    }
   },
   computed: {
     hueInRgb() {
@@ -216,12 +321,12 @@ export default {
     // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
       this.lineIn = new this.Tone.Gain();
-      this.tremoloNode = new this.Tone.Tremolo(this.roomConfig.tremolo);
-      this.vibratoNode = new this.Tone.Vibrato(this.roomConfig.vibrato);
-      this.phaserNode = new this.Tone.Phaser(this.roomConfig.phaser);
-      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.roomConfig.feedbackDelay);
-      this.reverbNode = new this.Tone.Freeverb(this.roomConfig.reverb);
-      this.eq3Node = new this.Tone.EQ3(this.roomConfig.EQ3);
+      this.tremoloNode = new this.Tone.Tremolo(this.tremoloConfig);
+      this.vibratoNode = new this.Tone.Vibrato(this.vibratoConfig);
+      this.phaserNode = new this.Tone.Phaser(this.phaserConfig);
+      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.feedbackDelayConfig);
+      this.reverbNode = new this.Tone.Freeverb(this.reverbConfig);
+      this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
 
       this.lineIn.chain(
         this.tremoloNode, 
@@ -237,6 +342,14 @@ export default {
   	// ////////////////
     // INIT METHODS //
   	// ////////////////
+    configureToneEffects() {
+      this.tremoloConfig = roomConfig.tremolo
+      this.vibratoConfig = roomConfig.vibrato
+      this.phaserConfig = roomConfig.phaser
+      this.feedbackDelayConfig = roomConfig.feedbackDelay
+      this.reverbConfig = roomConfig.reverb
+      this.EQ3Config = roomConfig.EQ3
+    },
     resetHue() {
       this.lightIds.forEach((id) => {
         this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
@@ -248,6 +361,7 @@ export default {
     if (this.useLights) {
       this.resetHue();
     }
+    this.configureToneEffects()
     this.createRoomLine();
     // `Tone.Transport.start()` must be started before events can be scheduled
     this.Tone.Transport.start();
@@ -279,13 +393,14 @@ export default {
 
   .lightPreview {
     display: block;
-    height: 100px;
-    width: 100px;
+    height: 120px;
+    width: 120px;
     margin-right: 20px;
   }
 
-  #light-config-container {
+  .config-component-container {
     display: flex;
+    flex-wrap: wrap;
   }
 
   .single-light-config {
@@ -300,6 +415,15 @@ export default {
 
   .config-section {
     margin-bottom: 60px;
+  }
+
+  .patchConfig {
+    margin-right: 40px;
+
+    .title {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
   }
 
 </style>

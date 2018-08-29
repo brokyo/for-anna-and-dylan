@@ -27,7 +27,7 @@ for example, does not change it for section 3 -->
 				</div>
 			</div>
 		</div>
-		<div id="timbreConfig">
+<!-- 		<div id="timbreConfig">
 			<h3>Timbre</h3>
 			<div class="configContainer">
 				<div class="timbreItem">
@@ -52,7 +52,7 @@ for example, does not change it for section 3 -->
 					<input type="range" max="0" min="-30" v-model="EQ3Config.high">
 				</div>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </template>
 
@@ -122,12 +122,24 @@ export default {
       },
       deep: true,
     },
+    chorusConfig: {
+      handler() {
+        this.chorusNode.set(this.chorusConfig)
+      },
+      deep: true
+    },
     EQ3Config: {
       handler() {
         this.eq3Node.set(this.EQ3Config);
       },
       deep: true,
     },
+    filterConfig: {
+      handler() {
+        this.filterNode.set(this.filterConfig)
+      },
+      deep: true
+    }
   },
   methods: {
   	// /////////////
@@ -338,11 +350,11 @@ export default {
     /// be used by the synth patch
     /// TODO: `Object.assign()` used to create a new object so sections can independently
     /// change values. Rethink this later 
-    var configDeepCopy = JSON.parse(JSON.stringify(this.config));
-    this.partialsConfig = configDeepCopy.partials;
-    this.chorusConfig = configDeepCopy.chorus;
-    this.EQ3Config = configDeepCopy.EQ3;
-    this.filterConfig = configDeepCopy.filter;
+    // var configDeepCopy = JSON.parse(JSON.stringify(this.config));
+    this.partialsConfig = this.config.partials;
+    this.chorusConfig = this.config.chorus;
+    this.EQ3Config = this.config.EQ3;
+    this.filterConfig = this.config.filter;
     this.createToneChain();
     // this.startSection();
   },
