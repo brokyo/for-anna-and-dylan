@@ -357,6 +357,8 @@ export default {
 
     eventBus.$on('start-waves', response => this.startSection())
     eventBus.$on('stop-waves', response => this.active = false)
+    eventBus.$on('deactivate-hue', response => this.useHue = false)
+    eventBus.$on('activate-hue', response => this.useHue = true)
 
   },
 };

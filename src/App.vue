@@ -5,6 +5,8 @@
       <button @click="stopWaves">Stop Waves</button>
       <button @click="workLights">Work Lights</button>
 			<button @click="lightsOff">Lights Off</button>
+      <button v-if="useHue" @click="deactivateHue">Deactive Hue</button>
+      <button v-else @click="activateHue">Activate Hue</button>
 		</div>
 
     <config
@@ -227,7 +229,7 @@ export default {
     return {
     	// Controls
       roomBuilt: false,
-      useLights: false,
+      useHue: true,
       activeSection: 2,
       sections: [
         {
@@ -387,6 +389,14 @@ export default {
         this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
     },
+    deactivateHue() {
+      this.useHue = false
+      eventBus.$emit('deactivate-hue');
+    },
+    activateHue() {
+      this.useHue = true
+      eventBus.$emit('activate-hue');
+    },
     // //////////////////
     // UTILITY METHODS //
     // /////////////////
@@ -443,8 +453,8 @@ export default {
     // INIT METHODS //
   	// ////////////////
     resetHue() {
-      this.lightIds.forEach((id) => {
-        this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
+      this.sections.forEach((section) => {
+        this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
     },
     /////////////////////
@@ -467,9 +477,7 @@ export default {
   },
   // Do this as soon as the component mounts
   mounted() {
-    if (this.useLights) {
-      this.resetHue();
-    }
+    this.resetHue();
     this.createRoomLine();
     this.setRoomConfig();
     // `Tone.Transport.start()` must be started before events can be scheduled
