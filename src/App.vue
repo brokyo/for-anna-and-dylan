@@ -78,15 +78,17 @@
 
     <div class="config-section">
       <h2>Scale</h2>
-      <input
-        class="input-array"
-        v-for="(note, index) in scale"
-        v-model='scale[index]'
-      />
+      <select v-model="scale">
+          <option v-for="scale in possibleScales" :value="scale.notes">{{scale.name}}</option>
+      </select>
     </div>
 
     <div class="config-section">
       <h2>Room Timbre</h2>
+      <label>Presets</label>
+      <select v-model="activeRoomConfig">
+        <option :value="timbre" v-for="(timbre, index) in roomTimbres">{{timbre.name}}</option>
+      </select>
       <div class="config-component-container">
         <tremolo-config-component
           v-bind.sync="tremoloConfig"
@@ -113,23 +115,28 @@
 
     <div class="config-section">
       <h2>Synth Timbre</h2>
+      <label>Presets</label>
+      <select v-model="activeSectionConfig">
+        <option :value="timbre" v-for="(timbre, index) in sectionTimbres">{{timbre.name}}</option>
+      </select>
       <div class="config-component-container">
         <partials-config-component
-          v-bind:partials.sync="sectionConfig.partials"
+          v-bind:partials.sync="activeSectionConfig.partials"
         ></partials-config-component>
         <chorus-config-component
-          v-bind.sync="sectionConfig.chorus"
+          v-bind.sync="activeSectionConfig.chorus"
           :oscillatorArray="oscillatorArray"
         ></chorus-config-component>
         <eq3-config-component
-          v-bind.sync="sectionConfig.EQ3"
+          v-bind.sync="activeSectionConfig.EQ3"
         ></eq3-config-component>
         <filter-config-component
-          v-bind.sync="sectionConfig.filter"
+          v-bind.sync="activeSectionConfig.filter"
         ></filter-config-component>
       </div>
     </div>
 
+    // Prop spam is because these are built to be individually configurable but right now they're all being set on the top level
     <div class="config-section">
   		<section-controls
   			v-if="roomBuilt"
@@ -142,7 +149,11 @@
   			:h="h"
   			:s="s"
   			:b="b"
-  			:config="section.config"
+        :partialsConfig="activeSectionConfig.partials"
+        :chorusConfig="activeSectionConfig.chorus"
+        :EQ3Config="activeSectionConfig.EQ3"
+        :filterConfig="activeSectionConfig.filter"
+  			:sectionName="activeSectionConfig.name"
         :scale="scale"
   			>
   		</section-controls>
@@ -156,8 +167,10 @@ import Tone from 'tone';
 import NodeHueApi from 'node-hue-api';
 
 // Timbre configs pulled in from external files for easier editing
-import roomConfig from '@/configs/room';
+import roomTimbre from '@/configs/room';
+import roomTimbre2 from '@/configs/room2';
 import sectionConfig from '@/configs/section';
+import sectionConfig2 from '@/configs/section2';
 
 // Import needed components
 // // Room Effects
@@ -212,18 +225,19 @@ export default {
       activeSection: 2,
       sections: [
         {
-          id: 2,
-          config: sectionConfig,
+          id: 2
         },
         {
-          id: 5,
-          config: sectionConfig,
+          id: 5
         },
         {
-          id: 6,
-          config: sectionConfig,
+          id: 6
         },
       ],
+      sectionTimbres: [sectionConfig, sectionConfig2],
+      activeSectionConfig: sectionConfig2,
+      roomTimbres: [roomTimbre, roomTimbre2],
+      activeRoomConfig: roomTimbre,
       // Hue Config
       h: {
         in: 310,
@@ -238,6 +252,22 @@ export default {
         out: 1,
       },
       // Tone Universals
+      possibleScales: [
+        { name: 'In Sen - C', notes: [ 'C', 'Db', 'F', 'G', 'Bb' ]},
+        { name: 'In Sen - E', notes: [ 'E', 'F', 'A', 'B', 'D' ]},
+        { name: 'Yo - D', notes: [ 'D', 'E', 'G', 'A', 'B' ]},
+        { name: 'Yo - Bb', notes: [ 'Bb', 'C', 'Eb', 'D', 'G' ]},
+        { name: 'C Major', notes: [ 'C', 'D', 'E', 'F', 'G', 'A', 'B' ] },
+        { name: 'F Major', notes: [ 'F', 'G', 'A', 'Bb', 'C', 'D', 'E' ] },
+        { name: 'A Minor', notes: [ 'A', 'B', 'C', 'D', 'E', 'F', 'G' ] },
+        { name: 'E Minor', notes: [ 'E', 'Gb', 'Ab', 'A', 'B', 'C', 'Eb' ]},
+        { name: 'D Major Pentatonic', notes: [ 'C', 'D', 'E', 'G', 'A' ] },
+        { name: 'F# Major Pentatonic', notes: [ 'Gb', 'Ab', 'Bb', 'Db', 'Eb' ]},
+        { name: 'Hirajoshi - F', notes: [ 'F', 'Gb', 'Bb', 'B', 'Eb' ]},
+        { name: 'Hirajoshi - A', notes: [ 'A', 'B', 'D', 'Eb', 'G' ]},
+        { name: 'Byzantine - D', notes: [ 'D', 'Eb', 'Gb', 'G', 'A', 'Bb', 'Db' ]},
+        { name: 'Byzantine - Ab', notes: [ 'Ab', 'A', 'C', 'Db', 'Eb', 'E', 'G' ]} 
+      ],
       scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
       // Tone Room Config
@@ -263,6 +293,12 @@ export default {
     };
   },
   watch: {
+    activeRoomConfig: {
+      handler() {
+        this.setRoomConfig()
+      }, 
+      deep: true
+    },
     tremoloConfig: {
       handler() {
         this.tremoloNode.set(this.tremoloConfig);
@@ -301,13 +337,8 @@ export default {
     },
     partialsConfig: {
       handler() {
-        const setArray = [];
-        this.partialsConfig.forEach(partial => setArray.push(partial));
-        this.synth.set({
-          oscillator: {
-            partials: setArray,
-          },
-        });
+        console.log('app set')
+        eventBus.$emit('set-partials');
       },
       deep: true,
     },
@@ -405,14 +436,6 @@ export default {
   	// ////////////////
     // INIT METHODS //
   	// ////////////////
-    configureToneEffects() {
-      this.tremoloConfig = roomConfig.tremolo;
-      this.vibratoConfig = roomConfig.vibrato;
-      this.phaserConfig = roomConfig.phaser;
-      this.feedbackDelayConfig = roomConfig.feedbackDelay;
-      this.reverbConfig = roomConfig.reverb;
-      this.EQ3Config = roomConfig.EQ3;
-    },
     resetHue() {
       this.lightIds.forEach((id) => {
         this.hueApi.setLightState(id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
@@ -426,16 +449,23 @@ export default {
     },
     stopWaves() {
       eventBus.$emit('stop-waves');
+    },
+    setRoomConfig() {
+      this.tremoloConfig = this.activeRoomConfig.tremolo;
+      this.vibratoConfig = this.activeRoomConfig.vibrato;
+      this.phaserConfig = this.activeRoomConfig.phaser;
+      this.feedbackDelayConfig = this.activeRoomConfig.feedbackDelay;
+      this.reverbConfig = this.activeRoomConfig.reverb;
+      this.EQ3Config = this.activeRoomConfig.EQ3;
     }
   },
   // Do this as soon as the component mounts
   mounted() {
-    console.log(this.$refs)
     if (this.useLights) {
       this.resetHue();
     }
-    this.configureToneEffects();
     this.createRoomLine();
+    this.setRoomConfig();
     // `Tone.Transport.start()` must be started before events can be scheduled
     this.Tone.Transport.start();
   },

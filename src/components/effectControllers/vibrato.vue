@@ -15,7 +15,7 @@
             />
             <label>Frequency</label>
             <input
-                v-model.number="frequency"
+                :value.number="frequency"
                 @change="$emit('update:frequency', $event.target.value)"
                 type="range"
                 min="0.1"
@@ -24,7 +24,7 @@
             />
             <label>Depth</label>
             <input
-                v-model.number="depth"
+                :value.number="depth"
                 @change="$emit('update:depth', $event.target.value)"
                 type="range"
                 min="0"

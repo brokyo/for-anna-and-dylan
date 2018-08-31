@@ -3,10 +3,7 @@ in it are section-specific once on page so changing attack.min for section 2,
 for example, does not change it for section 3 -->
 <template>
 	<div class="config-section">
-		<h2>Section: {{lightId}} | Synth: {{config.name}}</h2>
-		<!-- <button @click="startSynth" v-if="!synthTest">Test Synth</button> -->
-    <!-- <button @click="stopSynth" v-else>Stop Synth</button> -->
-		<!-- <button v-if="active" @click="stopSection">Stop</button> -->
+		<h2>Section: {{lightId}} | Synth: {{sectionName}}</h2>
     <div class="config-component-container">
       <div class="patchConfig">
         <div class="config-label">
@@ -83,7 +80,7 @@ for example, does not change it for section 3 -->
 import { eventBus } from '@/main.js';
 export default {
   // Values shared from `app.vue`. Any changes that happen there will end up here
-  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'config', 'scale'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'partialsConfig', 'chorusConfig', 'EQ3Config', 'filterConfig', 'sectionName', 'scale'],
   // Reactive data we'll want the ability to change while the program is running
   data() {
     return {
@@ -94,10 +91,10 @@ export default {
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
       octaves: ['3', '4', '5'],
-      numEvents: ['1', '1', '3'],
+      numEvents: ['1', '3', '5'],
       hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
       brightnessShiftOptions: [0, 2, 4, 6, 8, 10],
-      saturationShiftOptions: [-10, -5, 0],
+      saturationShiftOptions: [-10, -5, 0, 5, 10],
       attack: {
         max: 3,
         min: 1,
@@ -108,19 +105,14 @@ export default {
       },
       volume: {
         min: -25,
-        max: -5,
+        max: 0,
       },
       waveRest: 3,
       duration: {
         max: 9,
-        min: 2,
+        min: 4,
       },
       startShift: 5,
-      // Tonejs Config
-      partialsConfig: {},
-      chorusConfig: {},
-      EQ3Config: {},
-      filterConfig: {},
       // Tonejs Patch
       synth: {},
       chorusNode: {},
@@ -196,20 +188,12 @@ export default {
     // ///////////////////
     // CONTROL METHODS //
     // ///////////////////
-    startSynth() {
-      this.synth.triggerAttackRelease(220);
-      this.synthTest = true;
-    },
-    stopSynth() {
-      this.synth.triggerRelease(220);
-      this.synthTest = false;
-    },
-    stopSection() {
-      this.active = false;
-    },
     startSection() {
       this.active = true;
       this.generateWave();
+    },
+    stopSection() {
+      this.active = false;
     },
     // Generates all the values needed to create a wave. Runs once per wave.
     // / This is the "source" of the randomness
@@ -321,7 +305,7 @@ export default {
 
       // map the volume generated to the proper brightness
       // / e.g. make quieter volumes result in less bright lights
-      const volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max + this.volume.mind, 0, this.brightnessShiftOptions.length));
+      const volumeIndex = Math.floor(this.mapRange(synth.volume, this.volume.min, this.volume.max, 0, this.brightnessShiftOptions.length));
 
       hueIn.s = this.s.in + this.saturationShiftOptions[events.length - 1];
       hueIn.l = this.b.in + this.brightnessShiftOptions[volumeIndex];
@@ -369,18 +353,7 @@ export default {
     },
   },
   mounted() {
-    // As soon as the component is mounted assign the config values so they can
-    // / be used by the synth patch
-    // / TODO: `Object.assign()` used to create a new object so sections can independently
-    // / change values. Rethink this later
-    // var configDeepCopy = JSON.parse(JSON.stringify(this.config));
-    this.partialsConfig = this.config.partials;
-    this.chorusConfig = this.config.chorus;
-    this.EQ3Config = this.config.EQ3;
-    this.filterConfig = this.config.filter;
-    this.scale = this.scale
     this.createToneChain();
-    // this.startSection();
 
     eventBus.$on('start-waves', response => this.startSection())
     eventBus.$on('stop-waves', response => this.active = false)
