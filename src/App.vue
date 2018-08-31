@@ -7,6 +7,10 @@
 			<button @click="lightsOff">Lights Off</button>
 		</div>
 
+    <config
+      :
+
+
     <div class="config-section">
   		<h2>Light</h2>
   		<div class="config-component-container">
@@ -136,7 +140,7 @@
       </div>
     </div>
 
-    // Prop spam is because these are built to be individually configurable but right now they're all being set on the top level
+    <!-- Prop spam is because these are built to be individually configurable but right now they're all being set on the top level -->
     <div class="config-section">
   		<section-controls
   			v-if="roomBuilt"
@@ -187,6 +191,7 @@ import partialsConfigComponent from '@/components/effectControllers/partials.vue
 import chorusConfigComponent from '@/components/effectControllers/chorus.vue';
 import filterConfigComponent from '@/components/effectControllers/filter.vue';
 
+import configData from '@/components/config.vue'
 
 import { eventBus } from '@/main.js';
 export default {
@@ -202,6 +207,7 @@ export default {
     'partials-config-component': partialsConfigComponent,
     'chorus-config-component': chorusConfigComponent,
     'filter-config-component': filterConfigComponent,
+    'config-data': configData
   },
   // Do this as soon as the page is created
   created() {
@@ -257,12 +263,12 @@ export default {
         { name: 'In Sen - E', notes: [ 'E', 'F', 'A', 'B', 'D' ]},
         { name: 'Yo - D', notes: [ 'D', 'E', 'G', 'A', 'B' ]},
         { name: 'Yo - Bb', notes: [ 'Bb', 'C', 'Eb', 'D', 'G' ]},
-        { name: 'C Major', notes: [ 'C', 'D', 'E', 'F', 'G', 'A', 'B' ] },
-        { name: 'F Major', notes: [ 'F', 'G', 'A', 'Bb', 'C', 'D', 'E' ] },
-        { name: 'A Minor', notes: [ 'A', 'B', 'C', 'D', 'E', 'F', 'G' ] },
-        { name: 'E Minor', notes: [ 'E', 'Gb', 'Ab', 'A', 'B', 'C', 'Eb' ]},
-        { name: 'D Major Pentatonic', notes: [ 'C', 'D', 'E', 'G', 'A' ] },
-        { name: 'F# Major Pentatonic', notes: [ 'Gb', 'Ab', 'Bb', 'Db', 'Eb' ]},
+        { name: 'Western - C Major', notes: [ 'C', 'D', 'E', 'F', 'G', 'A', 'B' ] },
+        { name: 'Western - F Major', notes: [ 'F', 'G', 'A', 'Bb', 'C', 'D', 'E' ] },
+        { name: 'Western - A Minor', notes: [ 'A', 'B', 'C', 'D', 'E', 'F', 'G' ] },
+        { name: 'Western - E Minor', notes: [ 'E', 'Gb', 'Ab', 'A', 'B', 'C', 'Eb' ]},
+        { name: 'Pentatonic - D Major', notes: [ 'C', 'D', 'E', 'G', 'A' ] },
+        { name: 'Pentatonic - F# Major', notes: [ 'Gb', 'Ab', 'Bb', 'Db', 'Eb' ]},
         { name: 'Hirajoshi - F', notes: [ 'F', 'Gb', 'Bb', 'B', 'Eb' ]},
         { name: 'Hirajoshi - A', notes: [ 'A', 'B', 'D', 'Eb', 'G' ]},
         { name: 'Byzantine - D', notes: [ 'D', 'Eb', 'Gb', 'G', 'A', 'Bb', 'Db' ]},
