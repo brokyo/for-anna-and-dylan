@@ -196,6 +196,7 @@ export default {
     // CONTROL METHODS //
     // ///////////////////
     startSection() {
+      console.log(this.lightId)
       this.active = true;
       this.generateWave();
     },

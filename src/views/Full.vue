@@ -17,83 +17,69 @@
         </button>
         <h2>Light</h2>
       </div>
-      <div v-if="!lightCollapsed">
-        <div>
-          <label>Included lights</label>
-          <div class="inluded_light_container">
-            <div v-for="(light, index) in sections" class="individual_light">
-              <span class="remove_light" @click="removeLight(index)">X</span>
-              <div class="light_data">
-                <h4>ID: {{light.id}}</h4> 
-                <span>{{light.name}}</span>
-              </div>
+      <div v-if="!lightCollapsed" class="config-component-container">
+        <div class="light-config">
+          <label class="config-label">Light In</label>
+          <div class="single-light-config">
+            <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueInRgb[0] + ',' + hueInRgb[1] + ',' + hueInRgb[2] + ')' }"></div>
+            <div class="light-config-params">
+              <label>Hue</label>
+              <input 
+                v-model.number="h.in"
+                type="range" 
+                min="0" 
+                max="360" 
+              />
+              <label>Saturation</label>
+              <input 
+                v-model.number="s.in"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
+              <label>Brightness</label>
+              <input 
+                v-model.number="b.in"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
             </div>
           </div>
+          <button @click="testInColor">Test In Color</button>
         </div>
-        <div class="config-component-container">
-          <div class="light-config">
-            <label class="config-label">Light In</label>
-            <div class="single-light-config">
-              <div class="lightPreview light-config-meta" :style="{'background-color': 'rgb('+ hueInRgb[0] + ',' + hueInRgb[1] + ',' + hueInRgb[2] + ')' }"></div>
-              <div class="light-config-params">
-                <label>Hue</label>
-                <input 
-                  v-model.number="h.in"
-                  type="range" 
-                  min="0" 
-                  max="360" 
-                />
-                <label>Saturation</label>
-                <input 
-                  v-model.number="s.in"
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                />
-                <label>Brightness</label>
-                <input 
-                  v-model.number="b.in"
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                />
-              </div>
+        <div class="light-config">
+          <label class="config-label">Light Out</label>
+          <div class="single-light-config">
+            <div 
+              class="lightPreview light-config-meta" 
+              :style="{'background-color': 'rgb('+ hueOutRgb[0] + ',' + hueOutRgb[1] + ',' + hueOutRgb[2] + ')' }">
             </div>
-            <button @click="testInColor">Test In Color</button>
-          </div>
-          <div class="light-config">
-            <label class="config-label">Light Out</label>
-            <div class="single-light-config">
-              <div 
-                class="lightPreview light-config-meta" 
-                :style="{'background-color': 'rgb('+ hueOutRgb[0] + ',' + hueOutRgb[1] + ',' + hueOutRgb[2] + ')' }">
-              </div>
-              <div class="light-config-params">
-                <label>Hue</label>
-                <input 
-                  v-model.number="h.out"
-                  type="range" 
-                  min="0" 
-                  max="360" 
-                />
-                <label>Saturation</label>
-                <input 
-                  v-model.number="s.out"
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                />
-                <label>Brightness</label>
-                <input 
-                  v-model.number="b.out"
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                />
-              </div>
+            <div class="light-config-params">
+              <label>Hue</label>
+              <input 
+                v-model.number="h.out"
+                type="range" 
+                min="0" 
+                max="360" 
+              />
+              <label>Saturation</label>
+              <input 
+                v-model.number="s.out"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
+              <label>Brightness</label>
+              <input 
+                v-model.number="b.out"
+                type="range" 
+                min="0" 
+                max="100" 
+              />
             </div>
-            <button @click="testOutColor">Test Out Color</button>
           </div>
+          <button @click="testOutColor">Test Out Color</button>
         </div>
       </div>
     </div>
@@ -264,7 +250,11 @@ export default {
     // Philips Hue Api
     this.hue = NodeHueApi;
     this.sections = JSON.parse(localStorage.getItem('waves_lights'))
-
+    // this.sections = [
+    //   {id: 2, name: 'test light 1'},
+    //   {id: 4, name: 'test light 2'},
+    //   {id: 6, name: 'test light 3'}
+    // ]
   },
   // Reactive data that to let us change things during play
   data() {
@@ -412,9 +402,6 @@ export default {
     configureHueApi() {
       this.hueApi = new this.hue.HueApi(this.bridgeIp, this.bridgeUsername);
       this.lightState = this.hue.lightState;
-    },
-    removeLight(index) {
-      this.sections.splice(index, 1)
     },
     lightsOff() {
       this.sections.forEach((section) => {
@@ -564,45 +551,6 @@ export default {
   select {
     display: block;
     margin-bottom: 5px;
-  }
-
-
-  .inluded_light_container {
-    margin-top: 20px;
-    margin-bottom: 20px;
-    display: flex;
-
-    .individual_light {
-      width: 100px;
-      height: 100px;
-      border: 1px solid black;
-      margin-right: 20px;
-
-      .light_data {
-        text-align: center;
-      }
-
-      h4 {
-        margin-top: 0px;
-      }
-    }
-  }
-
-  .remove_light {
-    cursor: pointer;
-    font-weight: 900;
-    position: relative;
-    top: 8px;
-    left: 90px;
-    top: -10px;
-    border: 1px solid black;
-    background-color: white;
-    padding: 3px;
-    font-size: 14px;
-  }
-
-  .remove_light:hover {
-    background-color: #dff6ff
   }
 
 

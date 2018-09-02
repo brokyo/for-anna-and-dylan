@@ -32,8 +32,8 @@ export default {
     dampening: 1285,
   },
   EQ3: {
-    low: -18,
-    mid: -18,
-    high: 0,
+    low: -10,
+    mid: -15,
+    high: 13,
   },
 };
