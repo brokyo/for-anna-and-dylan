@@ -2,8 +2,7 @@
   <div>
     <div v-if="connected">
         <div>
-          <button @click="newLights">Find New Lights</button>
-          <label>Which lights do you want to include?</label>
+          <p>Waves will use these lights:</p>
           <div class="inluded_light_container">
             <div v-for="(light, index) in sections" class="individual_light">
               <span class="remove_light" @click="removeLight(index)">X</span>
@@ -14,12 +13,19 @@
             </div>
           </div>
         </div>
-      <h2>Done. Head to <router-link to="/full">full</router-link></h2>
+        <button @click="newLights">Find New Lights</button>
+        <h2><router-link to="/full">Go Listen</router-link></h2>
     </div>
     <div v-else>
       <p>Hit the button on your hue bridge then click the button below</p>
       <p>You should only need to do this once</p>
+      <button @click="getIp">Get Ip</button>
+      <button @click="registerUser">Register User</button>
+      <button @click="newLights">New Lights</button>
       <button @click="getHueConfig">Connect Hue</button>
+      <pre>IP: {{ip}}</pre>
+      <pre>USERNAME: {{username}}</pre>
+      <pre>LIGHTS: {{lights}}</pre>
     </div>
   </div>
 </template>
@@ -44,14 +50,28 @@
     },
     computed: {
       connected() {
-        if(localStorage.getItem('waves_lights')) {
-          return true
-        } else {
+        // if(localStorage.getItem('waves_lights')) {
+          // return true
+        // } else {
           return false
-        }
+        // }
       }
     },
     methods: {
+      getIp() {
+        hue.nupnpSearch()
+        .then(data => {
+          this.ip = data[0].ipaddress
+          localStorage.setItem('waves_ip', this.ip)
+        })        
+      },
+      registerUser() {
+        api.registerUser(this.ip, "waves")
+        .then(username => {
+          this.username = username
+          localStorage.setItem('waves_username', this.username)
+        })
+      },
       getHueConfig() {
         hue.nupnpSearch()
         .then(data => {
@@ -105,6 +125,8 @@
             }
             lightsArray.push(lightMetadata)
           })
+
+          console.log(lightsArray)
 
           this.sections = lightsArray
           localStorage.setItem('waves_lights', JSON.stringify(lightsArray))
