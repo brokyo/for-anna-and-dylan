@@ -13,7 +13,8 @@
     "jshue": "^2.1.1",
     "node-hue-api": "^2.4.3",
     "tone": "^0.12.80",
-    "vue": "^2.5.17"
+    "vue": "^2.5.17",
+    "vue-router": "^3.0.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-eslint": "^3.0.0",
