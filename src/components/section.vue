@@ -3,8 +3,14 @@ in it are section-specific once on page so changing attack.min for section 2,
 for example, does not change it for section 3 -->
 <template>
 	<div class="config-section">
-		<h2>Section: {{lightId}} | Synth: {{sectionName}}</h2>
-    <div class="config-component-container">
+    <div class="config-header">
+      <button class="collapse-button" @click="collapsed = !collapsed">
+        <span v-if="collapsed">+</span>
+        <span v-else>-</span>
+      </button>
+  		<h2>Section: {{lightId}} | Synth: {{sectionName}}</h2>
+    </div>
+    <div v-if="!collapsed" class="config-component-container">
       <div class="patchConfig">
         <div class="config-label">
           <label>wave config</label>
@@ -88,6 +94,7 @@ export default {
       active: false,
       useHue: true,
       synthTest: false,
+      collapsed: false,
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
       octaves: ['3', '4', '5'],

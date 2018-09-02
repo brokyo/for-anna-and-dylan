@@ -1,8 +1,23 @@
 <template>
   <div>
+    <div id="control-buttons">
+      <button @click="startWaves">Start Waves</button>
+      <button @click="stopWaves">Stop Waves</button>
+      <button @click="workLights">Work Lights</button>
+      <button @click="lightsOff">Lights Off</button>
+      <button v-if="useHue" @click="deactivateHue">Deactive Hue</button>
+      <button v-else @click="activateHue">Activate Hue</button>
+    </div>
+
     <div class="config-section">
-      <h2>HUE API CONFIG</h2>
-      <div class="config-component-container">
+      <div class="config-header">
+        <button class="collapse-button" @click="apiCollapsed = !apiCollapsed">
+          <span v-if="apiCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>HUE API CONFIG</h2>
+      </div>
+      <div v-if="!apiCollapsed" class="config-component-container">
         <label>IP</label>
         <input v-model="bridgeIp" />
         <label>Username</label>
@@ -17,18 +32,15 @@
       </div>
     </div>
 
-    <div id="controlButtons">
-      <button @click="startWaves">Start Waves</button>
-      <button @click="stopWaves">Stop Waves</button>
-      <button @click="workLights">Work Lights</button>
-      <button @click="lightsOff">Lights Off</button>
-      <button v-if="useHue" @click="deactivateHue">Deactive Hue</button>
-      <button v-else @click="activateHue">Activate Hue</button>
-    </div>
-
     <div class="config-section">
-      <h2>Light</h2>
-      <div class="config-component-container">
+      <div class="config-header">
+        <button class="collapse-button" @click="lightCollapsed = !lightCollapsed">
+          <span v-if="lightCollapsed">-</span>
+          <span v-else>+</span>
+        </button>
+        <h2>Light</h2>
+      </div>
+      <div v-if="lightCollapsed" class="config-component-container">
         <div class="light-config">
           <label class="config-label">Light In</label>
           <div class="single-light-config">
@@ -96,62 +108,93 @@
     </div>
 
     <div class="config-section">
-      <h2>Scale</h2>
-      <select v-model="scale">
-          <option v-for="scale in possibleScales" :value="scale.notes">{{scale.name}}</option>
-      </select>
-    </div>
-
-    <div class="config-section">
-      <h2>Room Timbre</h2>
-      <label>Presets</label>
-      <select v-model="activeRoomConfig">
-        <option :value="timbre" v-for="(timbre, index) in roomTimbres">{{timbre.name}}</option>
-      </select>
-      <div class="config-component-container">
-        <tremolo-config-component
-          v-bind.sync="tremoloConfig"
-          :oscillatorArray="oscillatorArray"
-        ></tremolo-config-component>
-        <vibrato-config-component
-          v-bind.sync="vibratoConfig"
-          :oscillatorArray="oscillatorArray"
-        ></vibrato-config-component>
-        <phaser-config-component
-          v-bind.sync="phaserConfig"
-        ></phaser-config-component>
-        <feedback-delay-config-component
-          v-bind.sync="feedbackDelayConfig"
-        ></feedback-delay-config-component>
-        <reverb-config-component
-          v-bind.sync="reverbConfig"
-        ></reverb-config-component>
-        <eq3-config-component
-          v-bind.sync="EQ3Config"
-        ></eq3-config-component>
+      <div class="config-header">
+        <button class="collapse-button" @click="scaleCollapsed = !scaleCollapsed">
+          <span v-if="scaleCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Scale</h2>
+      </div>
+      <div v-if="!scaleCollapsed" class="config-component-container">
+        <select v-model="scale">
+            <option v-for="scale in possibleScales" :value="scale.notes">{{scale.name}}</option>
+        </select>
       </div>
     </div>
 
     <div class="config-section">
-      <h2>Synth Timbre</h2>
-      <label>Presets</label>
-      <select v-model="activeSectionConfig">
-        <option :value="timbre" v-for="(timbre, index) in sectionTimbres">{{timbre.name}}</option>
-      </select>
-      <div class="config-component-container">
-        <partials-config-component
-          v-bind:partials.sync="activeSectionConfig.partials"
-        ></partials-config-component>
-        <chorus-config-component
-          v-bind.sync="activeSectionConfig.chorus"
-          :oscillatorArray="oscillatorArray"
-        ></chorus-config-component>
-        <eq3-config-component
-          v-bind.sync="activeSectionConfig.EQ3"
-        ></eq3-config-component>
-        <filter-config-component
-          v-bind.sync="activeSectionConfig.filter"
-        ></filter-config-component>
+      <div class="config-header">
+        <button class="collapse-button" @click="roomTimbreCollapsed = !roomTimbreCollapsed">
+          <span v-if="roomTimbreCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Room Timbre</h2>
+      </div>
+      <div v-if="!roomTimbreCollapsed">
+        <div>
+          <label>Presets</label>
+          <select v-model="activeRoomConfig">
+            <option :value="timbre" v-for="(timbre, index) in roomTimbres">{{timbre.name}}</option>
+          </select>
+        </div>
+
+        <div class="config-component-container">
+
+
+          <tremolo-config-component
+            v-bind.sync="tremoloConfig"
+            :oscillatorArray="oscillatorArray"
+          ></tremolo-config-component>
+          <vibrato-config-component
+            v-bind.sync="vibratoConfig"
+            :oscillatorArray="oscillatorArray"
+          ></vibrato-config-component>
+          <phaser-config-component
+            v-bind.sync="phaserConfig"
+          ></phaser-config-component>
+          <feedback-delay-config-component
+            v-bind.sync="feedbackDelayConfig"
+          ></feedback-delay-config-component>
+          <reverb-config-component
+            v-bind.sync="reverbConfig"
+          ></reverb-config-component>
+          <eq3-config-component
+            v-bind.sync="EQ3Config"
+          ></eq3-config-component>
+        </div>
+      </div>
+    </div>
+
+    <div class="config-section">
+      <div class="config-header">
+        <button class="collapse-button" @click="synthTimbreCollapsed = !synthTimbreCollapsed">
+          <span v-if="synthTimbreCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Synth Timbre</h2>
+      </div>
+      <div v-if="!synthTimbreCollapsed">
+        <div>
+          <label>Presets</label>
+          <select v-model="activeSectionConfig">
+            <option :value="timbre" v-for="(timbre, index) in sectionTimbres">{{timbre.name}}</option>
+          </select>
+        </div>
+        <div class="config-component-container">
+          <partials-config-component
+            v-bind:partials.sync="activeSectionConfig.partials"
+          ></partials-config-component>
+          <chorus-config-component
+            v-bind.sync="activeSectionConfig.chorus"
+            :oscillatorArray="oscillatorArray"
+          ></chorus-config-component>
+          <eq3-config-component
+            v-bind.sync="activeSectionConfig.EQ3"
+          ></eq3-config-component>
+          <filter-config-component
+            v-bind.sync="activeSectionConfig.filter"
+          ></filter-config-component>
+        </div>
       </div>
     </div>
 
@@ -234,6 +277,12 @@ export default {
   // Reactive data that to let us change things during play
   data() {
     return {
+      // UI
+      apiCollapsed: true,
+      lightCollapsed: false,
+      scaleCollapsed: false,
+      roomTimbreCollapsed: false,
+      synthTimbreCollapsed: false,
       // System Config
       bridgeIp: '10.0.1.2',
       bridgeUsername: '7KTtUV6M1xoDAAyHCFaFOep8H43GlgPM22TfWMPo',
@@ -514,6 +563,10 @@ export default {
     font-family: monospace;
   }
 
+  #control-buttons {
+    margin-bottom: 20px;
+  }
+
   button {
     height: 40px;
     width: 120px;
@@ -521,7 +574,7 @@ export default {
   }
 
   button:hover {
-    background-color: #FED8F6
+    background-color: #dff6ff
   }
 
   input {
@@ -566,15 +619,26 @@ export default {
     font-weight: 100;
     font-style: italic;
     margin-bottom: 10px;
+    border-bottom: 1px solid black;
   }
 
   .config-section {
     margin-bottom: 60px;
 
+    .config-header {
+      margin-bottom: 20px;
+    }
+
     h2 {
       font-style: italic;
       font-weight: 100;
       text-transform: uppercase;
+      display: inline;
+    }
+
+    .collapse-button {
+      height: 20px;
+      width: 20px;
     }
   }
 
