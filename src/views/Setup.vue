@@ -30,10 +30,14 @@
   var api =  new hueApi()
 
   export default {
+    created() {
+      this.sections = JSON.parse(localStorage.getItem('waves_lights'))
+    },
     data() {
       return {
         ip: '',
         username: '',
+        sections: [],
         lights: [],
         hueApi: {}
       }
@@ -45,9 +49,6 @@
         } else {
           return false
         }
-      },
-      sections() {
-        return JSON.parse(localStorage.getItem('waves_lights'))
       }
     },
     methods: {
@@ -86,9 +87,8 @@
         .catch(error => console.log(error))
       },
       removeLight(index) {
-        let newSections = this.sections
-        newSections.splice(index, 1)
-        localStorage.setItem('waves_lights', JSON.stringify(newSections))
+        this.sections.splice(index, 1)
+        localStorage.setItem('waves_lights', JSON.stringify(this.sections))
       },
       newLights(){
         let ip = localStorage.getItem('waves_ip')
@@ -106,8 +106,8 @@
             lightsArray.push(lightMetadata)
           })
 
+          this.sections = lightsArray
           localStorage.setItem('waves_lights', JSON.stringify(lightsArray))
-          this.$forceUpdate()
          })
       }
     }
