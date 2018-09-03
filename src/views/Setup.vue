@@ -50,11 +50,11 @@
     },
     computed: {
       connected() {
-        // if(localStorage.getItem('waves_lights')) {
-          // return true
-        // } else {
+        if(localStorage.getItem('waves_lights')) {
+          return true
+        } else {
           return false
-        // }
+        }
       }
     },
     methods: {

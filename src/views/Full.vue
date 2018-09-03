@@ -175,6 +175,24 @@
       </div>
     </div>
 
+    <div class="config-section">
+      <div class="config-header">
+        <button class="collapse-button" @click="EQCollapsed = !EQCollapsed">
+          <span v-if="EQCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Full EQ</h2>
+      </div>
+      <div class="config-component-container">
+        <full-eq 
+          v-if="roomBuilt"
+          :Tone="Tone"
+          :lineIn="EQLineIn"
+          :lineOut="EQLineOut"
+        ></full-eq>
+      </div>
+    </div>
+
     <!-- Prop spam is because these are built to be individually configurable but right now they're all being set on the top level -->
     <div class="config-section">
       <section-controls
@@ -226,6 +244,9 @@ import partialsConfigComponent from '@/components/effectControllers/partials.vue
 import chorusConfigComponent from '@/components/effectControllers/chorus.vue';
 import filterConfigComponent from '@/components/effectControllers/filter.vue';
 
+// EQ
+import fullEQ from '@/components/effectControllers/fulleq.vue'
+
 import { eventBus } from '@/main.js';
 export default {
   // Register the `section` components with Vue so it can be used
@@ -239,7 +260,8 @@ export default {
     'eq3-config-component': eq3ConfigComponent,
     'partials-config-component': partialsConfigComponent,
     'chorus-config-component': chorusConfigComponent,
-    'filter-config-component': filterConfigComponent
+    'filter-config-component': filterConfigComponent,
+    'full-eq': fullEQ
   },
   // Do this as soon as the page is created
   created() {
@@ -260,10 +282,11 @@ export default {
   data() {
     return {
       // UI
-      lightCollapsed: false,
-      scaleCollapsed: false,
-      roomTimbreCollapsed: false,
-      synthTimbreCollapsed: false,
+      lightCollapsed: true,
+      scaleCollapsed: true,
+      roomTimbreCollapsed: true,
+      synthTimbreCollapsed: true,
+      EQCollapsed: false,
       // System Config
       bridgeIp: localStorage.getItem('waves_ip'),
       bridgeUsername: localStorage.getItem('waves_username'),
@@ -320,8 +343,11 @@ export default {
       chorusConfig: {},
       EQ3SynthConfig: {},
       filterConfig: {},
+      // Graphic EQ
+      EQLineIn: {},
+      EQLineOut: {},
       // Set up objects to serve as nodes in patch chain
-      lineIn: {},
+      roomLineIn: {},
       tremoloNode: {},
       vibratoNode: {},
       phaserNode: {},
@@ -464,7 +490,6 @@ export default {
     // control the `room` or the effect chain that all sections share.
     // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
-      this.lineIn = new this.Tone.Gain();
       this.tremoloNode = new this.Tone.Tremolo(this.tremoloConfig);
       this.vibratoNode = new this.Tone.Vibrato(this.vibratoConfig);
       this.phaserNode = new this.Tone.Phaser(this.phaserConfig);
@@ -472,7 +497,7 @@ export default {
       this.reverbNode = new this.Tone.Freeverb(this.reverbConfig);
       this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
 
-      this.lineIn.chain(
+      this.roomLineIn.chain(
         this.tremoloNode,
         this.vibratoNode,
         this.phaserNode,
@@ -490,6 +515,12 @@ export default {
       this.sections.forEach((section) => {
         this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
+    },
+    createConnectionNodes() {
+      this.EQLineIn = new Tone.Gain()
+      this.EQLineOut = new Tone.Gain()
+      this.roomLineIn = new this.Tone.Gain();
+      this.EQLineOut.connect(this.roomLineIn)
     },
     /////////////////////
     // CONTROL METHODS //
@@ -511,6 +542,7 @@ export default {
   },
   // Do this as soon as the component mounts
   mounted() {
+    this.createConnectionNodes()
     this.configureHueApi();
     this.resetHue();
     this.createRoomLine();

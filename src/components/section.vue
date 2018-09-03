@@ -94,7 +94,7 @@ export default {
       active: false,
       useHue: true,
       synthTest: false,
-      collapsed: false,
+      collapsed: true,
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
       octaves: ['3', '4', '5'],
@@ -189,14 +189,13 @@ export default {
         this.eq3Node,
         this.filterNode,
         this.lineOut,
-        this.$parent.lineIn,
+        this.$parent.EQLineIn,
       );
     },
     // ///////////////////
     // CONTROL METHODS //
     // ///////////////////
     startSection() {
-      console.log(this.lightId)
       this.active = true;
       this.generateWave();
     },
