@@ -6,24 +6,21 @@
         <div class="config">
             <label>Low</label>
             <input
-                :value.number="low"
-                @change="$emit('update:low', $event.target.value)"
+                v-model="config.low"
                 type="range"
                 max="0"
                 min="-30"
             />
             <label>Medium</label>
             <input
-                :value.number="mid"
-                @change="$emit('update:mid', $event.target.value)"
+                v-model="config.mid"
                 type="range"
                 max="0"
                 min="-30"
             />
             <label>High</label>
             <input
-                :value.number="high"
-                @change="$emit('update:high', $event.target.value)"
+                v-model="config.high"
                 type="range"
                 max="0"
                 min="-30"
@@ -31,16 +28,32 @@
         </div>
         <p class="code">
             {
-            	low: {{low}},
-            	mid: {{mid}},
-            	high: {{high}}
+            	low: {{config.low}},
+            	mid: {{config.mid}},
+            	high: {{config.high}}
             }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['low', 'mid', 'high'],
+  props: ['Tone', 'config'],
+  data() {
+    return {
+        node: {}
+    }
+  },
+  watch:{
+    config: {
+        handler() {
+            this.node.set(this.config)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.EQ3(this.config);
+  }
 };
 </script>
 <style>

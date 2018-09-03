@@ -63,6 +63,7 @@ export default {
   watch:{
     config: {
         handler() {
+            console.log('AY')
             this.node.set(this.config)
         },
         deep: true

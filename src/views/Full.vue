@@ -126,7 +126,9 @@
             :oscillatorArray="oscillatorArray"
           ></chorus-config-component>
           <eq3-config-component
-            v-bind.sync="activeSectionConfig.EQ3"
+            ref="synth_eq3"
+            :Tone="Tone"
+            :config="activeSectionConfig.eq3"
           ></eq3-config-component>
           <filter-config-component
             v-bind.sync="activeSectionConfig.filter"
@@ -173,16 +175,24 @@
             :config="activeRoomConfig.vibrato"
           ></vibrato-config-component>
           <phaser-config-component
-            v-bind.sync="phaserConfig"
+            ref="phaser"
+            :Tone="Tone"
+            :config="activeRoomConfig.phaser"
           ></phaser-config-component>
           <feedback-delay-config-component
-            v-bind.sync="feedbackDelayConfig"
+            ref="feedbackDelay"
+            :Tone="Tone"
+            :config="activeRoomConfig.feedbackDelay"
           ></feedback-delay-config-component>
           <reverb-config-component
-            v-bind.sync="reverbConfig"
+            ref="reverb"
+            :Tone="Tone"
+            :config="activeRoomConfig.reverb"
           ></reverb-config-component>
           <eq3-config-component
-            v-bind.sync="EQ3Config"
+            ref="eq3"
+            :Tone="Tone"
+            :config="activeRoomConfig.EQ3"
           ></eq3-config-component>
         </div>
       </div>
@@ -267,12 +277,12 @@ export default {
 
     // Philips Hue Api
     this.hue = NodeHueApi;
-    this.sections = JSON.parse(localStorage.getItem('waves_lights'))
-    // this.sections = [
-    //   {id: 2, name: 'test light 1'},
-    //   {id: 4, name: 'test light 2'},
-    //   {id: 6, name: 'test light 3'}
-    // ]
+    // this.sections = JSON.parse(localStorage.getItem('waves_lights'))
+    this.sections = [
+      {id: 2, name: 'test light 1'},
+      {id: 4, name: 'test light 2'},
+      {id: 6, name: 'test light 3'}
+    ]
   },
   // Reactive data that to let us change things during play
   data() {
@@ -326,56 +336,13 @@ export default {
       ],
       scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
-      // Tone Room Config
-      phaserConfig: {},
-      feedbackDelayConfig: {},
-      reverbConfig: {},
-      EQ3Config: {},
       // Tone Synth Config
       partialsConfig: {},
       chorusConfig: {},
-      EQ3SynthConfig: {},
       filterConfig: {},
-      // Set up objects to serve as nodes in patch chain
-      roomLineIn: {},
-      phaserNode: {},
-      feedbackDelayNode: {},
-      reverbNode: {},
-      eq3Node: {},
     };
   },
   watch: {
-    activeRoomConfig: {
-      handler() {
-        this.setRoomConfig()
-      }, 
-      deep: true
-    },
-
-    phaserConfig: {
-      handler() {
-        this.phaserNode.set(this.phaserConfig);
-      },
-      deep: true,
-    },
-    feedbackDelayConfig: {
-      handler() {
-        this.feedbackDelayNode.set(this.feedbackDelayConfig);
-      },
-      deep: true,
-    },
-    reverbConfig: {
-      handler() {
-        this.reverbNode.set(this.reverbConfig);
-      },
-      deep: true,
-    },
-    EQ3Config: {
-      handler() {
-        this.eq3Node.set(this.EQ3Config);
-      },
-      deep: true,
-    },
     partialsConfig: {
       handler() {
         console.log('app set')
@@ -467,22 +434,16 @@ export default {
     // control the `room` or the effect chain that all sections share.
     // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
-      this.phaserNode = new this.Tone.Phaser(this.phaserConfig);
-      this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.feedbackDelayConfig);
-      this.reverbNode = new this.Tone.Freeverb(this.reverbConfig);
-
-      this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
-      console.log(this.$refs)
-
       this.$refs.fullEq.lineOut.chain(
         this.$refs.tremolo.node,
         this.$refs.vibrato.node,
-        this.phaserNode,
-        this.feedbackDelayNode,
-        this.reverbNode,
-        this.eq3Node,
+        this.$refs.phaser.node,
+        this.$refs.feedbackDelay.node,
+        this.$refs.reverb.node,
+        this.$refs.eq3.node,
         this.Tone.Master,
       );
+
       this.roomBuilt = true;
     },
     // ////////////////
@@ -502,19 +463,12 @@ export default {
     stopWaves() {
       eventBus.$emit('stop-waves');
     },
-    setRoomConfig() {
-      this.phaserConfig = this.activeRoomConfig.phaser;
-      this.feedbackDelayConfig = this.activeRoomConfig.feedbackDelay;
-      this.reverbConfig = this.activeRoomConfig.reverb;
-      this.EQ3Config = this.activeRoomConfig.EQ3;
-    }
   },
   // Do this as soon as the component mounts
   mounted() {
     this.configureHueApi();
     this.resetHue();
     this.createRoomLine();
-    this.setRoomConfig();
     // `Tone.Transport.start()` must be started before events can be scheduled
     this.Tone.Transport.start();
 

@@ -26,6 +26,7 @@ export default {
     wet: 0.65,
     delayTime: 0.15,
     feedback: 0.5,
+    maxDelay: 10
   },
   reverb: {
     roomSize: 0.7,

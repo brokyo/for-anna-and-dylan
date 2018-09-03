@@ -6,8 +6,7 @@
         <div class="config">
             <label>Room Size</label>
             <input
-                :value.number="roomSize"
-                @change="$emit('update:roomSize', $event.target.value)"
+                v-model="config.roomSize"
                 type="range"
                 min="0"
                 max="1"
@@ -15,8 +14,7 @@
             />
             <label>Dampening</label>
             <input
-                :value.numer="dampening"
-                @change="$emit('update:dampening', $event.target.value)"
+                v-model="config.dampening"
                 type="range"
                 min="0"
                 max="2000"
@@ -24,15 +22,32 @@
         </div>
         <p class="code">
             {
-                roomSize: {{roomSize}},
-                dampening: {{dampening}}                
+                roomSize: {{config.roomSize}},
+                dampening: {{config.dampening}}                
             }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['roomSize', 'dampening'],
+  props: ['Tone', 'config'],
+  data() {
+    return {
+        node: {}
+    }
+  },
+  watch:{
+    config: {
+        handler() {
+            this.node.set(this.config)
+            console.log(this.node)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.Freeverb(this.config);
+  }
 };
 </script>
 <style>

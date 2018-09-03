@@ -6,8 +6,7 @@
         <div class="config">
             <label>Audibility</label>
             <input
-                :value.number="wet"
-                @change="$emit('update:wet', $event.target.value)"
+                v-model="config.wet"
                 type="range"
                 min="0"
                 max="1"
@@ -15,17 +14,15 @@
             />
             <label>Delay Time</label>
             <input
-                :value.number="delayTime"
-                @change="$emit('update:delayTime', $event.target.value)"
+                v-model="config.delayTime"
                 type="range"
                 min="0"
-                max="1"
+                max="2"
                 step="0.005"
             />
             <label>Feedback</label>
             <input
-                :value.number="feedback"
-                @change="$emit('update:feedback', $event.target.value)"
+                v-model="config.feedback"
                 type="range"
                 min="0"
                 max="1"
@@ -34,16 +31,33 @@
         </div>
         <p class="code">
             {
-                wet: {{wet}},
-                delayTime: {{delayTime}},
-                feedback: {{feedback}}                
+                wet: {{config.wet}},
+                delayTime: {{config.delayTime}},
+                maxDelay: {{config.maxDelay}},
+                feedback: {{config.feedback}}                
             }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['wet', 'delayTime', 'feedback'],
+  props: ['Tone', 'config'],
+  data() {
+    return {
+        node: {}
+    }
+  },
+  watch:{
+    config: {
+        handler() {
+            this.node.set(this.config)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.FeedbackDelay(this.config);
+  }
 };
 </script>
 <style>
