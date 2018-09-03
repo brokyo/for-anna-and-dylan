@@ -189,7 +189,7 @@ export default {
         this.eq3Node,
         this.filterNode,
         this.lineOut,
-        this.$parent.EQLineIn,
+        this.$parent.$refs.fullEq.lineIn
       );
     },
     // ///////////////////

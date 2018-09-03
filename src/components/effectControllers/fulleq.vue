@@ -1,27 +1,45 @@
 <template>
-	<div>
+    <div class="config-section">
+      <div class="config-header">
+        <button class="collapse-button" @click="EQCollapsed = !EQCollapsed">
+          <span v-if="EQCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Full EQ</h2>
+      </div>
+      <div class="config-component-container" v-show="!EQCollapsed">
 		<input 
 			v-for="(filter, index) in filterChain" 
-			:value="filter.gain.value"
 			:key="index"
+			:value="filter.gain.value"
 			@change="changeFilterGain(index, $event.target.value)"
 			type="range"
 			min="-12"
 			max="12"
-		/>
-	</div>
+			orient="vertical"
+			class="vertical-slider"
+			/>
+      </div>
+    </div>
 </template>
 
 <script>
 	export default {
-		props: ['Tone', 'lineIn', 'lineOut'],
+		props: ['Tone'],
 		data() {
 			return {
+				lineIn: {},
+				lineOut: {},
+				EQCollapsed: false,
 				equalizerFrequencies: [16, 20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500, 16000],
 				filterChain: []
 			}
 		},
 		methods: {
+			createIO() {
+				this.lineIn = new this.Tone.Gain()
+				this.lineOut = new this.Tone.Gain()
+			},
 			createEqualizer() {
 				this.equalizerFrequencies.forEach(frequency => {
 					let filterConfig = {
@@ -52,10 +70,18 @@
 			}
 		},
 		mounted() {
+			this.createIO()
 			this.createEqualizer()
 		}
 	}	
 </script>
 
 <style lang="scss" scoped>
+
+.vertical-slider {
+    display: inline-block;
+    margin-bottom: 5px;
+    width: 1.5%;
+    -webkit-appearance: slider-vertical;
+}
 </style>

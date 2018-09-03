@@ -6,8 +6,7 @@
         <div class="config">
             <label>Audibility</label>
             <input
-                :value.number="wet"
-                @change="$emit('update:wet', $event.target.value)"
+                v-model="config.wet"
                 type="range"
                 min="0"
                 max="1"
@@ -15,8 +14,7 @@
             />
             <label>Frequency</label>
             <input
-                :value.number="frequency"
-                @change="$emit('update:frequency', $event.target.value)"
+                v-model="config.frequency"
                 type="range"
                 min="0.1"
                 max="10"
@@ -24,8 +22,7 @@
             />
             <label>Depth</label>
             <input
-                :value.number="depth"
-                @change="$emit('update:depth', $event.target.value)"
+                v-model="config.depth"
                 type="range"
                 min="0"
                 max="1"
@@ -33,14 +30,12 @@
             />
             <label>Oscillator</label>
             <select
-                :value="type"
-                @change="$emit('update:type', $event.target.value)">
+                v-model="config.type">
                 <option v-for="oscillator in oscillatorArray">{{oscillator}}</option>
             </select>
             <label>Max Delay</label>
             <input
-                :value.number="maxDelay"
-                @change="$emit('update:maxDelay', $event.target.value)"
+                v-model="config.maxDelay"
                 type="range"
                 min="0"
                 max="1"
@@ -49,18 +44,36 @@
         </div>
         <p class="code">
             {
-                wet: {{wet}},
-                frequency: {{frequency}},
-                depth: {{depth}},
-                type: {{type}},
-                maxDelay: {{maxDelay}}                
+                wet: {{config.wet}},
+                frequency: {{config.frequency}},
+                depth: {{config.depth}},
+                type: {{config.type}},
+                maxDelay: {{config.maxDelay}}                
             }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['wet', 'frequency', 'depth', 'type', 'maxDelay', 'oscillatorArray'],
+  props: ['Tone', 'config'],
+  data() {
+    return {
+        oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
+        node: {}
+    }
+  },
+  watch: {
+    config: {
+        handler() {
+            this.node.set(this.config)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.Vibrato(this.config)
+  }
+
 };
 </script>
 <style>

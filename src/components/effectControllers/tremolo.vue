@@ -6,8 +6,7 @@
         <div class="config">
             <label>Audibility</label>
             <input
-                :value.number="wet"
-                @change="$emit('update:wet', $event.target.value)"
+                v-model.number="config.wet"
                 type="range"
                 min="0"
                 max="1"
@@ -15,8 +14,7 @@
             />
             <label>Frequency</label>
             <input
-                :value.number="frequency"
-                @change="$emit('update:frequency', $event.target.value)"
+                v-model.number="config.frequency"
                 type="range"
                 min="0.1"
                 max="10"
@@ -24,21 +22,19 @@
             />
             <label>Depth</label>
             <input
-                :value.number="depth"
-                @change="$emit('update:depth', $event.target.value)"
+                v-model.number="config.depth"
                 type="range"
                 min="0"
                 max="1"
                 step="0.05"
             />
             <label>Oscillator</label>
-            <select :value="type" @change="$emit('update:type', $event.target.value)">
+            <select v-model="config.type">
                 <option v-for="oscillator in oscillatorArray">{{oscillator}}</option>
             </select>
             <label>Spread</label>
             <input
-                :value.number="spread"
-                @change="$emit('update:spread', $event.target.value)"
+                v-model.number="config.spread"
                 type="range"
                 min="0"
                 max="180"
@@ -47,17 +43,34 @@
         </div>
         <p class="code">
             {
-                wet: {{wet}},
-                frequency: {{frequency}},
-                depth: {{depth}},
-                spread: {{spread}}                
+                wet: {{config.wet}},
+                frequency: {{config.frequency}},
+                depth: {{config.depth}},
+                spread: {{config.spread}}                
             }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['wet', 'frequency', 'depth', 'spread', 'type', 'oscillatorArray'],
+  props: ['config', 'Tone'],
+  data() {
+    return {
+        oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
+        node: {}
+    }
+  },
+  watch:{
+    config: {
+        handler() {
+            this.node.set(this.config)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.Tremolo(this.config);
+  }
 };
 </script>
 <style>

@@ -9,6 +9,7 @@
       <button v-else @click="activateHue">Activate Hue</button>
     </div>
 
+    <!-- LIGHTS -->
     <div class="config-section">
       <div class="config-header">
         <button class="collapse-button" @click="lightCollapsed = !lightCollapsed">
@@ -84,6 +85,7 @@
       </div>
     </div>
 
+    <!-- SCALE -->
     <div class="config-section">
       <div class="config-header">
         <button class="collapse-button" @click="scaleCollapsed = !scaleCollapsed">
@@ -99,49 +101,7 @@
       </div>
     </div>
 
-    <div class="config-section">
-      <div class="config-header">
-        <button class="collapse-button" @click="roomTimbreCollapsed = !roomTimbreCollapsed">
-          <span v-if="roomTimbreCollapsed">+</span>
-          <span v-else>-</span>
-        </button>
-        <h2>Room Timbre</h2>
-      </div>
-      <div v-if="!roomTimbreCollapsed">
-        <div>
-          <label>Presets</label>
-          <select v-model="activeRoomConfig">
-            <option :value="timbre" v-for="(timbre, index) in roomTimbres">{{timbre.name}}</option>
-          </select>
-        </div>
-
-        <div class="config-component-container">
-
-
-          <tremolo-config-component
-            v-bind.sync="tremoloConfig"
-            :oscillatorArray="oscillatorArray"
-          ></tremolo-config-component>
-          <vibrato-config-component
-            v-bind.sync="vibratoConfig"
-            :oscillatorArray="oscillatorArray"
-          ></vibrato-config-component>
-          <phaser-config-component
-            v-bind.sync="phaserConfig"
-          ></phaser-config-component>
-          <feedback-delay-config-component
-            v-bind.sync="feedbackDelayConfig"
-          ></feedback-delay-config-component>
-          <reverb-config-component
-            v-bind.sync="reverbConfig"
-          ></reverb-config-component>
-          <eq3-config-component
-            v-bind.sync="EQ3Config"
-          ></eq3-config-component>
-        </div>
-      </div>
-    </div>
-
+    <!-- SYNTH TIMBRE -->
     <div class="config-section">
       <div class="config-header">
         <button class="collapse-button" @click="synthTimbreCollapsed = !synthTimbreCollapsed">
@@ -175,25 +135,62 @@
       </div>
     </div>
 
+    <!-- EQ -->
+    <full-eq 
+      ref="fullEq"
+      :Tone="Tone"
+    ></full-eq>
+
+
+    <!-- ROOM TIMBRE -->
     <div class="config-section">
       <div class="config-header">
-        <button class="collapse-button" @click="EQCollapsed = !EQCollapsed">
-          <span v-if="EQCollapsed">+</span>
+        <button class="collapse-button" @click="roomTimbreCollapsed = !roomTimbreCollapsed">
+          <span v-if="roomTimbreCollapsed">+</span>
           <span v-else>-</span>
         </button>
-        <h2>Full EQ</h2>
+        <h2>Room Timbre</h2>
       </div>
-      <div class="config-component-container">
-        <full-eq 
-          v-if="roomBuilt"
-          :Tone="Tone"
-          :lineIn="EQLineIn"
-          :lineOut="EQLineOut"
-        ></full-eq>
+      <div v-show="!roomTimbreCollapsed">
+        <div>
+          <label>Presets</label>
+          <select v-model="activeRoomConfig">
+            <option :value="timbre" v-for="(timbre, index) in roomTimbres">{{timbre.name}}</option>
+          </select>
+        </div>
+
+        <div class="config-component-container">
+
+
+          <tremolo-config-component
+            ref="tremolo"
+            :Tone="Tone"
+            :config="activeRoomConfig.tremolo"
+          ></tremolo-config-component>
+          <vibrato-config-component
+            ref="vibrato"
+            :Tone="Tone"
+            :config="activeRoomConfig.vibrato"
+          ></vibrato-config-component>
+          <phaser-config-component
+            v-bind.sync="phaserConfig"
+          ></phaser-config-component>
+          <feedback-delay-config-component
+            v-bind.sync="feedbackDelayConfig"
+          ></feedback-delay-config-component>
+          <reverb-config-component
+            v-bind.sync="reverbConfig"
+          ></reverb-config-component>
+          <eq3-config-component
+            v-bind.sync="EQ3Config"
+          ></eq3-config-component>
+        </div>
       </div>
     </div>
 
-    <!-- Prop spam is because these are built to be individually configurable but right now they're all being set on the top level -->
+
+
+    <!-- SYNTH CONFIG -->
     <div class="config-section">
       <section-controls
         v-if="roomBuilt"
@@ -246,7 +243,6 @@ import filterConfigComponent from '@/components/effectControllers/filter.vue';
 
 // EQ
 import fullEQ from '@/components/effectControllers/fulleq.vue'
-
 import { eventBus } from '@/main.js';
 export default {
   // Register the `section` components with Vue so it can be used
@@ -286,7 +282,6 @@ export default {
       scaleCollapsed: true,
       roomTimbreCollapsed: true,
       synthTimbreCollapsed: true,
-      EQCollapsed: false,
       // System Config
       bridgeIp: localStorage.getItem('waves_ip'),
       bridgeUsername: localStorage.getItem('waves_username'),
@@ -332,8 +327,6 @@ export default {
       scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
       oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
       // Tone Room Config
-      tremoloConfig: {},
-      vibratoConfig: {},
       phaserConfig: {},
       feedbackDelayConfig: {},
       reverbConfig: {},
@@ -343,13 +336,8 @@ export default {
       chorusConfig: {},
       EQ3SynthConfig: {},
       filterConfig: {},
-      // Graphic EQ
-      EQLineIn: {},
-      EQLineOut: {},
       // Set up objects to serve as nodes in patch chain
       roomLineIn: {},
-      tremoloNode: {},
-      vibratoNode: {},
       phaserNode: {},
       feedbackDelayNode: {},
       reverbNode: {},
@@ -363,18 +351,7 @@ export default {
       }, 
       deep: true
     },
-    tremoloConfig: {
-      handler() {
-        this.tremoloNode.set(this.tremoloConfig);
-      },
-      deep: true,
-    },
-    vibratoConfig: {
-      handler() {
-        this.vibratoNode.set(this.vibratoConfig);
-      },
-      deep: true,
-    },
+
     phaserConfig: {
       handler() {
         this.phaserNode.set(this.phaserConfig);
@@ -490,16 +467,16 @@ export default {
     // control the `room` or the effect chain that all sections share.
     // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
-      this.tremoloNode = new this.Tone.Tremolo(this.tremoloConfig);
-      this.vibratoNode = new this.Tone.Vibrato(this.vibratoConfig);
       this.phaserNode = new this.Tone.Phaser(this.phaserConfig);
       this.feedbackDelayNode = new this.Tone.FeedbackDelay(this.feedbackDelayConfig);
       this.reverbNode = new this.Tone.Freeverb(this.reverbConfig);
-      this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
 
-      this.roomLineIn.chain(
-        this.tremoloNode,
-        this.vibratoNode,
+      this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
+      console.log(this.$refs)
+
+      this.$refs.fullEq.lineOut.chain(
+        this.$refs.tremolo.node,
+        this.$refs.vibrato.node,
         this.phaserNode,
         this.feedbackDelayNode,
         this.reverbNode,
@@ -516,12 +493,6 @@ export default {
         this.hueApi.setLightState(section.id, this.lightState.create().on().hsb(this.h.out, this.s.out, this.b.out));
       });
     },
-    createConnectionNodes() {
-      this.EQLineIn = new Tone.Gain()
-      this.EQLineOut = new Tone.Gain()
-      this.roomLineIn = new this.Tone.Gain();
-      this.EQLineOut.connect(this.roomLineIn)
-    },
     /////////////////////
     // CONTROL METHODS //
     /////////////////////
@@ -532,8 +503,6 @@ export default {
       eventBus.$emit('stop-waves');
     },
     setRoomConfig() {
-      this.tremoloConfig = this.activeRoomConfig.tremolo;
-      this.vibratoConfig = this.activeRoomConfig.vibrato;
       this.phaserConfig = this.activeRoomConfig.phaser;
       this.feedbackDelayConfig = this.activeRoomConfig.feedbackDelay;
       this.reverbConfig = this.activeRoomConfig.reverb;
@@ -542,7 +511,6 @@ export default {
   },
   // Do this as soon as the component mounts
   mounted() {
-    this.createConnectionNodes()
     this.configureHueApi();
     this.resetHue();
     this.createRoomLine();
