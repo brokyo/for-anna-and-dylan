@@ -102,13 +102,14 @@
     </div>
 
     <!-- SYNTH TIMBRE -->
-<!--     <div class="config-section">
+    <div class="config-section">
       <div class="config-header">
         <button class="collapse-button" @click="synthTimbreCollapsed = !synthTimbreCollapsed">
           <span v-if="synthTimbreCollapsed">+</span>
           <span v-else>-</span>
         </button>
-        <h2>Synth Timbre</h2>
+        <h2>Universal Synth Timbre</h2>
+        <span> [will change all synths]</span>
       </div>
       <div v-if="!synthTimbreCollapsed">
         <div>
@@ -138,7 +139,7 @@
           ></filter-config-component>
         </div>
       </div>
-    </div> -->
+    </div>
 
     <!-- SYNTH CONFIG -->
     <div class="config-section">
@@ -279,7 +280,7 @@ export default {
     // this.sections = JSON.parse(localStorage.getItem('waves_lights'))
     this.sections = [
       {id: 2, name: 'test light 1'},
-      {id: 4, name: 'test light 2'},
+      {id: 5, name: 'test light 2'},
       {id: 6, name: 'test light 3'}
     ]
   },
