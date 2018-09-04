@@ -8,7 +8,7 @@ for example, does not change it for section 3 -->
         <span v-if="collapsed">+</span>
         <span v-else>-</span>
       </button>
-  		<h2>Section: {{lightId}} | Synth: {{localConfig.name}}</h2>
+  		<h2>Section: {{lightId}} | Synth: {{localConfig.name}}</h2><span> [synth specific config]</span>
     </div>
     <div v-show="!collapsed" class="config-component-container">
       <div class="event-config">
@@ -81,25 +81,38 @@ for example, does not change it for section 3 -->
         </div>
       </div>
       <div class="synth-config">
-        <div class="config-component-container">
-          <partials-config-component
-            v-bind:partials.sync="localConfig.partials"
-          ></partials-config-component>
-          <chorus-config-component
-            ref="chorus"
-            :config="localConfig.chorus"
-            :Tone="Tone"
-          ></chorus-config-component>
-          <eq3-config-component
-            ref="eq3"
-            :Tone="Tone"
-            :config="localConfig.eq3"
-          ></eq3-config-component>
-          <filter-config-component
-            ref="filter"
-            :Tone="Tone"
-            :config="localConfig.filter"
-          ></filter-config-component>
+        <div class="sub-header">
+          <button class="collapse-button" @click="synthConfigCollapsed = !synthConfigCollapsed">
+            <span v-if="synthConfigCollapsed">+</span>
+            <span v-else>-</span>
+          </button>
+          <h4>Individual Synth Config</h4>
+        </div>
+        <div v-show="!synthConfigCollapsed">
+          <label>Presets</label>
+          <select v-model="localConfig">
+            <option v-for="timbre in timbreOptions" :value="timbre">{{timbre.name}}</option>
+          </select>
+          <div class="config-component-container">
+            <partials-config-component
+              v-bind:partials.sync="localConfig.partials"
+            ></partials-config-component>
+            <chorus-config-component
+              ref="chorus"
+              :config="localConfig.chorus"
+              :Tone="Tone"
+            ></chorus-config-component>
+            <eq3-config-component
+              ref="eq3"
+              :Tone="Tone"
+              :config="localConfig.eq3"
+            ></eq3-config-component>
+            <filter-config-component
+              ref="filter"
+              :Tone="Tone"
+              :config="localConfig.filter"
+            ></filter-config-component>
+          </div>
         </div>
       </div>
     </div>
@@ -112,7 +125,11 @@ import partialsConfigComponent from '@/components/effectControllers/partials.vue
 import chorusConfigComponent from '@/components/effectControllers/chorus.vue';
 import filterConfigComponent from '@/components/effectControllers/filter.vue';
 
+import sectionConfig from '@/configs/section';
+import sectionConfig2 from '@/configs/section2';
+
 import { eventBus } from '@/main.js';
+
 export default {
   // Values shared from `app.vue`. Any changes that happen there will end up here
   props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'toneConfig', 'scale'],
@@ -135,11 +152,14 @@ export default {
       useHue: true,
       synthTest: false,
       collapsed: true,
+      synthConfigCollapsed: true,
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
       // TONE
       partialsConfig: {},
       localConfig: {},
+      timbreOptions: [sectionConfig, sectionConfig2],
+      selectedTimbre: sectionConfig,
       octaves: ['3', '4', '5'],
       numEvents: ['1', '3', '5'],
       hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
@@ -395,6 +415,12 @@ export default {
 <style lang="scss">
 .event-config {
   display: flex;
+}
+
+.sub-header {
+  h4 {
+    display: inline-block;
+  }
 }
 .section-config {
 	margin-right: 60px;

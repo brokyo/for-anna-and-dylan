@@ -40,7 +40,6 @@ export default {
     config: {
         handler() {
             this.node.set(this.config)
-            console.log(this.node)
         },
         deep: true
     }
