@@ -10,7 +10,7 @@ export default {
     type: 'sine',
     spread: 180,
   },
-  EQ3: {
+  eq3: {
     low: -10,
     mid: -11,
     high: -4,

@@ -6,26 +6,24 @@
         <div class="config">
             <label>Frequency</label>
             <input
-                :value.number="frequency"
-                @change="$emit('update:frequency', $event.target.value)"
+                v-model="config.frequency"
                 type="range"
                 min="0"
                 max="2000"
             />
             <label>Filter Type</label>
-            <select :value="type" @change="$emit('update:type', $event.target.value)">
+            <select v-model="config.type">
                 <option v-for="filterType in filterArray">{{filterType}}</option>
             </select>
             <label>Filter Rolloff</label>
-            <select :value.number="rolloff" @change="$emit('update:rolloff', $event.target.value)">
+            <select v-model="config.rolloff">
                 <option v-for="rolloff in rolloffArray">
                     <select>{{rolloff}}</select>
                 </option>
             </select>
             <label>Q</label>
             <input
-                :value.numer="Q"
-                @change="$emit('update:Q', $event.target.value)"
+                v-model="config.Q"
                 type="range"
                 min="0"
                 max="50"
@@ -33,23 +31,35 @@
         </div>
         <p class="code">
         {
-            frequency: {{frequency}},
-            type: {{type}},
-            rolloff: {{rolloff}},
-            Q: {{Q}},   
+            frequency: {{config.frequency}},
+            type: {{config.type}},
+            rolloff: {{config.rolloff}},
+            Q: {{config.Q}},   
         }
         </p>
     </div>
 </template>
 <script>
 export default {
-  props: ['frequency', 'type', 'rolloff', 'Q'],
+  props: ['config', 'Tone'],
   data() {
     return {
-      filterArray: ['bandpass', 'lowpass', 'highpass', 'lowshelf', 'highshelf'],
-      rolloffArray: [-12, -24, -48],
+        node: {},
+        filterArray: ['bandpass', 'lowpass', 'highpass', 'lowshelf', 'highshelf'],
+        rolloffArray: [-12, -24, -48],
     };
   },
+  watch:{
+    config: {
+        handler() {
+            this.node.set(this.config)
+        },
+        deep: true
+    }
+  },
+  mounted() {
+    this.node = new this.Tone.Filter(this.config);
+  }
 
 };
 </script>

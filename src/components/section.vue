@@ -8,74 +8,98 @@ for example, does not change it for section 3 -->
         <span v-if="collapsed">+</span>
         <span v-else>-</span>
       </button>
-  		<h2>Section: {{lightId}} | Synth: {{sectionName}}</h2>
+  		<h2>Section: {{lightId}} | Synth: {{localConfig.name}}</h2>
     </div>
-    <div v-if="!collapsed" class="config-component-container">
-      <div class="patchConfig">
-        <div class="config-label">
-          <label>wave config</label>
+    <div v-show="!collapsed" class="config-component-container">
+      <div class="event-config">
+        <div class="patchConfig">
+          <div class="config-label">
+            <label>wave config</label>
+          </div>
+          <div class="config">
+            <label class="label-break">Possible Octaves</label>
+            <input
+              class="input-array"
+              v-for="(octave, index) in octaves"
+              v-model="octaves[index]"
+            />
+            <label class="label-break">Possible Number Of Events</label>
+            <input
+              class="input-array"
+              v-for="(event, index) in numEvents"
+              v-model="numEvents[index]"
+            />
+            <label class="label-break">Max Wave Rest</label>
+            <input 
+              v-model.number="waveRest"
+              type="number"
+            />
+            <label>Max Start Delay</label>
+            <input 
+              type="number"
+              v-model.number="startShift"
+            />
+          </div>
         </div>
-        <div class="config">
-          <label class="label-break">Possible Octaves</label>
-          <input
-            class="input-array"
-            v-for="(octave, index) in octaves"
-            v-model="octaves[index]"
-          />
-          <label class="label-break">Possible Number Of Events</label>
-          <input
-            class="input-array"
-            v-for="(event, index) in numEvents"
-            v-model="numEvents[index]"
-          />
-          <label class="label-break">Max Wave Rest</label>
-          <input 
-            v-model.number="waveRest"
-            type="number"
-          />
-          <label>Max Start Delay</label>
-          <input 
-            type="number"
-            v-model.number="startShift"
-          />
+
+        <div class="patchConfig">
+          <div class="config-label">
+            <label>note</label>
+          </div>
+          <div class="config">
+            <label>Attack Max</label>
+            <input 
+              v-model.number="attack.max"
+              type="number"
+            />
+            <label>Attack Min</label>
+            <input 
+              v-model.number="attack.min"
+              type="number"
+            />
+            <label>Release Max</label>
+            <input 
+              v-model.number="release.max"
+              type="number"
+            />
+            <label>Release Min</label>
+            <input 
+              v-model.number="release.min"
+              type="number"
+            />
+            <label>Duration Max</label>
+            <input
+              v-model.number="duration.max"
+              type="number"
+            />
+            <label>Duration Min</label>
+            <input
+              v-model.number="duration.min"
+              type="number"
+            />
+          </div>
         </div>
       </div>
-
-      <div class="patchConfig">
-        <div class="config-label">
-          <label>note</label>
-        </div>
-        <div class="config">
-          <label>Attack Max</label>
-          <input 
-            v-model.number="attack.max"
-            type="number"
-          />
-          <label>Attack Min</label>
-          <input 
-            v-model.number="attack.min"
-            type="number"
-          />
-          <label>Release Max</label>
-          <input 
-            v-model.number="release.max"
-            type="number"
-          />
-          <label>Release Min</label>
-          <input 
-            v-model.number="release.min"
-            type="number"
-          />
-          <label>Duration Max</label>
-          <input
-            v-model.number="duration.max"
-            type="number"
-          />
-          <label>Duration Min</label>
-          <input
-            v-model.number="duration.min"
-            type="number"
-          />
+      <div class="synth-config">
+        <div class="config-component-container">
+          <partials-config-component
+            v-bind:partials.sync="localConfig.partials"
+          ></partials-config-component>
+          <chorus-config-component
+            ref="chorus"
+            :config="localConfig.chorus"
+            :Tone="Tone"
+          ></chorus-config-component>
+          <eq3-config-component
+            ref="eq3"
+            :Tone="Tone"
+            :config="localConfig.eq3"
+          ></eq3-config-component>
+          <filter-config-component
+            ref="filter"
+            :Tone="Tone"
+            :config="localConfig.filter"
+          ></filter-config-component>
         </div>
       </div>
     </div>
@@ -83,10 +107,26 @@ for example, does not change it for section 3 -->
 </template>
 
 <script>
+import eq3ConfigComponent from '@/components/effectControllers/eq3.vue';
+import partialsConfigComponent from '@/components/effectControllers/partials.vue';
+import chorusConfigComponent from '@/components/effectControllers/chorus.vue';
+import filterConfigComponent from '@/components/effectControllers/filter.vue';
+
 import { eventBus } from '@/main.js';
 export default {
   // Values shared from `app.vue`. Any changes that happen there will end up here
-  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'partialsConfig', 'chorusConfig', 'EQ3Config', 'filterConfig', 'sectionName', 'scale'],
+  props: ['lightId', 'Tone', 'hueApi', 'lightState', 'h', 's', 'b', 'toneConfig', 'scale'],
+  components: {
+    'eq3-config-component': eq3ConfigComponent,
+    'partials-config-component': partialsConfigComponent,
+    'chorus-config-component': chorusConfigComponent,
+    'filter-config-component': filterConfigComponent,
+  },
+  created() {
+    this.localConfig = JSON.parse(JSON.stringify(this.toneConfig))
+    this.partialsConfig = this.localConfig.partials
+    this.lineOut = new this.Tone.Volume(-5);
+  },
   // Reactive data we'll want the ability to change while the program is running
   data() {
     return {
@@ -97,6 +137,9 @@ export default {
       collapsed: true,
       // Possibilities for light & sound. These values are selected or derived
       // / in `generateWave()` and `mungeHueData()`
+      // TONE
+      partialsConfig: {},
+      localConfig: {},
       octaves: ['3', '4', '5'],
       numEvents: ['1', '3', '5'],
       hueShiftOptions: [-2, -2, -1, 0, 1, 2, 2],
@@ -122,15 +165,9 @@ export default {
       startShift: 5,
       // Tonejs Patch
       synth: {},
-      chorusNode: {},
-      filterNode: {},
-      eq3Node: {},
       lineOut: {},
     };
   },
-  // Do something when these values change
-  // / Largely used to allow the live updating of the timbre by making changes
-  // / to the partials on page - for example - propagate to the synth
   watch: {
     partialsConfig: {
       handler() {
@@ -144,24 +181,12 @@ export default {
       },
       deep: true,
     },
-    chorusConfig: {
+    toneConfig: {
       handler() {
-        this.chorusNode.set(this.chorusConfig);
+        this.localConfig = JSON.parse(JSON.stringify(this.toneConfig))
       },
-      deep: true,
-    },
-    EQ3Config: {
-      handler() {
-        this.eq3Node.set(this.EQ3Config);
-      },
-      deep: true,
-    },
-    filterConfig: {
-      handler() {
-        this.filterNode.set(this.filterConfig);
-      },
-      deep: true,
-    },
+      deep: true
+    }
   },
   methods: {
   	// /////////////
@@ -179,17 +204,12 @@ export default {
     createToneChain() {
       this.synth = new this.Tone.PolySynth();
       this.synth.set({ oscillator: { partials: this.partialsConfig } });
-      this.chorusNode = new this.Tone.Chorus(this.chorusConfig);
-      this.eq3Node = new this.Tone.EQ3(this.EQ3Config);
-      this.filterNode = new this.Tone.Filter(this.filterConfig);
-      this.lineOut = new this.Tone.Volume(-5);
 
       this.synth.chain(
-        this.chorusNode,
-        this.eq3Node,
-        this.filterNode,
+        this.$refs.chorus.node,
+        this.$refs.eq3.node,
+        this.$refs.filter.node,
         this.lineOut,
-        this.$parent.$refs.fullEq.lineIn
       );
     },
     // ///////////////////
@@ -373,6 +393,9 @@ export default {
 </script>
 
 <style lang="scss">
+.event-config {
+  display: flex;
+}
 .section-config {
 	margin-right: 60px;
 }

@@ -102,7 +102,7 @@
     </div>
 
     <!-- SYNTH TIMBRE -->
-    <div class="config-section">
+<!--     <div class="config-section">
       <div class="config-header">
         <button class="collapse-button" @click="synthTimbreCollapsed = !synthTimbreCollapsed">
           <span v-if="synthTimbreCollapsed">+</span>
@@ -122,8 +122,9 @@
             v-bind:partials.sync="activeSectionConfig.partials"
           ></partials-config-component>
           <chorus-config-component
-            v-bind.sync="activeSectionConfig.chorus"
-            :oscillatorArray="oscillatorArray"
+            ref="chorus"
+            :config="activeSectionConfig.chorus"
+            :Tone="Tone"
           ></chorus-config-component>
           <eq3-config-component
             ref="synth_eq3"
@@ -131,10 +132,31 @@
             :config="activeSectionConfig.eq3"
           ></eq3-config-component>
           <filter-config-component
-            v-bind.sync="activeSectionConfig.filter"
+            ref="filter"
+            :Tone="Tone"
+            :config="activeSectionConfig.filter"
           ></filter-config-component>
         </div>
       </div>
+    </div> -->
+
+    <!-- SYNTH CONFIG -->
+    <div class="config-section">
+      <section-controls
+        v-for="section in sections"
+        :ref="'section' + section.id"
+        :key='section.id'
+        :lightId="section.id"
+        :Tone="Tone"
+        :lightState="lightState"
+        :hueApi="hueApi"
+        :h="h"
+        :s="s"
+        :b="b"
+        :toneConfig="activeSectionConfig"
+        :scale="scale"
+        >
+      </section-controls>
     </div>
 
     <!-- EQ -->
@@ -199,29 +221,6 @@
     </div>
 
 
-
-    <!-- SYNTH CONFIG -->
-    <div class="config-section">
-      <section-controls
-        v-if="roomBuilt"
-        v-for="section in sections"
-        :key='section.id'
-        :lightId="section.id"
-        :Tone="Tone"
-        :lightState="lightState"
-        :hueApi="hueApi"
-        :h="h"
-        :s="s"
-        :b="b"
-        :partialsConfig="activeSectionConfig.partials"
-        :chorusConfig="activeSectionConfig.chorus"
-        :EQ3Config="activeSectionConfig.EQ3"
-        :filterConfig="activeSectionConfig.filter"
-        :sectionName="activeSectionConfig.name"
-        :scale="scale"
-        >
-      </section-controls>
-    </div>
 
   </div>
 </template>
@@ -297,9 +296,7 @@ export default {
       bridgeUsername: localStorage.getItem('waves_username'),
       sections: [],
       // Controls
-      roomBuilt: false,
       useHue: true,
-      activeSection: 2,
       sectionTimbres: [sectionConfig, sectionConfig2],
       activeSectionConfig: sectionConfig,
       roomTimbres: [roomTimbre, roomTimbre2],
@@ -335,17 +332,14 @@ export default {
         { name: 'Byzantine - Ab', notes: [ 'Ab', 'A', 'C', 'Db', 'Eb', 'E', 'G' ]} 
       ],
       scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
-      oscillatorArray: ['sine', 'square', 'sawtooth', 'triangle'],
-      // Tone Synth Config
-      partialsConfig: {},
-      chorusConfig: {},
-      filterConfig: {},
+      //Props
+      hueApi: {},
+      lightState: {}
     };
   },
   watch: {
     partialsConfig: {
       handler() {
-        console.log('app set')
         eventBus.$emit('set-partials');
       },
       deep: true,
@@ -429,10 +423,6 @@ export default {
     // /////////////////
     // SETUP METHODS //
     // /////////////////
-    // Builds Tone.JS chain starting at lineIn (what the section connects to)
-    // and going all the way to the speakers (`Tone.Master`). These params
-    // control the `room` or the effect chain that all sections share.
-    // initial parameters come from `room.js` but can be changed on page
     createRoomLine() {
       this.$refs.fullEq.lineOut.chain(
         this.$refs.tremolo.node,
@@ -444,7 +434,12 @@ export default {
         this.Tone.Master,
       );
 
-      this.roomBuilt = true;
+    },
+    connectSectionAndRoom() {
+      this.sections.forEach(section => {
+        let sectionRef = String('section' + section.id)
+        this.$refs[sectionRef][0].lineOut.connect(this.$refs.fullEq.lineIn)
+      })
     },
     // ////////////////
     // INIT METHODS //
@@ -464,15 +459,12 @@ export default {
       eventBus.$emit('stop-waves');
     },
   },
-  // Do this as soon as the component mounts
   mounted() {
     this.configureHueApi();
-    this.resetHue();
+    // this.resetHue();
     this.createRoomLine();
-    // `Tone.Transport.start()` must be started before events can be scheduled
+    this.connectSectionAndRoom();
     this.Tone.Transport.start();
-
-
 
   },
 };
