@@ -14,7 +14,7 @@
 			:value="filter.gain.value"
 			@change="changeFilterGain(index, $event.target.value)"
 			type="range"
-			min="-12"
+			min="-50"
 			max="12"
 			orient="vertical"
 			class="vertical-slider"

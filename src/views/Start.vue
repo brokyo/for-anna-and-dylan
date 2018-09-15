@@ -7,7 +7,6 @@
     <router-link class="link" to="/full">Play</router-link>
   </div>
 </template>
-
 <style scoped>
   .link {
     display: block;

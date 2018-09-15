@@ -277,12 +277,12 @@ export default {
 
     // Philips Hue Api
     this.hue = NodeHueApi;
-    // this.sections = JSON.parse(localStorage.getItem('waves_lights'))
-    this.sections = [
-      {id: 2, name: 'test light 1'},
-      {id: 5, name: 'test light 2'},
-      {id: 6, name: 'test light 3'}
-    ]
+    this.sections = JSON.parse(localStorage.getItem('waves_lights'))
+    // this.sections = [
+    //   {id: 2, name: 'test light 1'},
+    //   {id: 5, name: 'test light 2'},
+    //   {id: 6, name: 'test light 3'}
+    // ]
   },
   // Reactive data that to let us change things during play
   data() {

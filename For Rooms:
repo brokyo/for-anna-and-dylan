@@ -1,0 +1,24 @@
+For Rooms:
+
+== Section ==
+Osc
+- No timbre config. Pure wave.
+- 3D directional controls
+- Uniform volume
+- Slow change over time rather than pure random
+- Lights individual addressed. More palpable hue shifts between
+--- brightness = volume; hue = note
+
+Events:
+- One octave per section
+- One event per section (maybe 2)
+- Distinct note times
+
+=== Room ===
+- Few room effects (maybe reverb)
+
+
+===== EQ ====
+- End of chain
+- Presets
+- Can we vizualize wave?

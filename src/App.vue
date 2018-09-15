@@ -4,6 +4,15 @@
     <router-view />
   </div>
 </template>
+<script>
+  import wavesNav from '@/components/header.vue'
+
+  export default {
+    components: {
+      'waves-nav': wavesNav
+    }
+  }
+</script>
 <style lang="scss">
 
 </style>

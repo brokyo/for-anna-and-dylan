@@ -3,7 +3,7 @@ import Router from 'vue-router'
 import Full from './views/Full.vue'
 import Setup from './views/Setup.vue'
 import Start from './views/Start.vue'
-
+import ForRooms from '@/views/ForRooms'
 Vue.use(Router)
 
 export default new Router({
@@ -23,6 +23,11 @@ export default new Router({
       path: '/full',
       name: 'Full',
       component: Full
+    },
+    {
+      path: '/forrooms',
+      name: 'Room',
+      component: ForRooms
     }
   ]
   
