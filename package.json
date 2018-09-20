@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "clipboard": "^2.0.1",
     "dgram": "^1.0.1",
     "huejay": "^1.8.4",
     "jshue": "^2.1.1",
     "node-hue-api": "^2.4.3",
     "tone": "^0.12.80",
     "vue": "^2.5.17",
+    "vue-clipboard2": "^0.2.1",
     "vue-router": "^3.0.1",
-    "vue-slider-component": "^2.7.7"
+    "vue-slider-component": "^2.7.7",
+    "weighted-random": "^0.1.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-eslint": "^3.0.0",

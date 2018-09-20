@@ -8,17 +8,21 @@
         <h2>Full EQ</h2>
       </div>
       <div class="config-component-container" v-show="!EQCollapsed">
-		<input 
+      	<span class="sliderContainer"
 			v-for="(filter, index) in filterChain" 
 			:key="index"
-			:value="filter.gain.value"
-			@change="changeFilterGain(index, $event.target.value)"
-			type="range"
-			min="-50"
-			max="12"
-			orient="vertical"
-			class="vertical-slider"
+		>
+			<input 
+				:value="filter.gain.value"
+				@change="changeFilterGain(index, $event.target.value)"
+				type="range"
+				min="-50"
+				max="12"
+				orient="vertical"
+				class="vertical-slider"
 			/>
+			<span>{{equalizerFrequencies[index]}}</span>
+		</span>
       </div>
     </div>
 </template>
@@ -77,11 +81,13 @@
 </script>
 
 <style lang="scss" scoped>
+.sliderContainer {
+	width: 2.5%;
+}
 
 .vertical-slider {
     display: inline-block;
     margin-bottom: 5px;
-    width: 1.5%;
     -webkit-appearance: slider-vertical;
 }
 </style>
