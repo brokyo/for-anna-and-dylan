@@ -122,7 +122,7 @@
         sections: [
           { id: 2 }
         ],
-        scale: ['F', 'G', 'A', 'Bb', 'C', 'D', 'E'],
+        scale: [ 'D', 'E', 'G', 'A', 'B' ],
         hueConfig: {
           api: {},
           lightState: {},
@@ -231,7 +231,8 @@
       this.Tone = Tone;
       this.configureHueApi()
 
-      this.sections = JSON.parse(localStorage.getItem('waves_lights'))
+      // this.sections = JSON.parse(localStorage.getItem('waves_lights'))
+      this.sections = [{id: 1}, {id: 2}, {id: 3}]
       this.Tone.Transport.start();
     },
     mounted() {
@@ -247,5 +248,9 @@
 <style lang="scss">
   #section_container {
     display: flex;
+  }
+
+  button {
+    display: inline-block;
   }
 </style>
