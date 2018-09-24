@@ -76,6 +76,22 @@
         </div>
       </div>
     </div>
+    <!-- SCALE -->
+    <div class="config-section">
+      <div class="config-header">
+        <button class="collapse-button" @click="scaleCollapsed = !scaleCollapsed">
+          <span v-if="scaleCollapsed">+</span>
+          <span v-else>-</span>
+        </button>
+        <h2>Scale</h2>
+      </div>
+      <div v-if="!scaleCollapsed" class="config-component-container">
+        <select v-model="scale">
+            <option v-for="scale in possibleScales" :value="scale.notes">{{scale.name}}</option>
+        </select>
+      </div>
+    </div>
+
     <div id="section_container">
       <room-section
         v-for='section in sections'
@@ -123,6 +139,30 @@
           { id: 2 }
         ],
         scale: [ 'D', 'E', 'G', 'A', 'B' ],
+        possibleScales: [
+          { name: 'Insen - A', notes: [ 'A', 'Bb', 'D', 'E', 'Gb' ]},
+          { name: 'Insen - B', notes: [ 'B', 'Cb', 'E', 'F', 'Ab' ]},
+          { name: 'Insen - C', notes: [ 'C', 'Db', 'F', 'G', 'Bb' ]},
+          { name: 'Insen - D', notes: [ 'D', 'Eb', 'G', 'A', 'Cb' ]},
+          { name: 'Insen - E', notes: [ 'E', 'Fb', 'A', 'B', 'Db' ]},
+          { name: 'Insen - F', notes: [ 'F', 'Gb', 'B', 'C', 'Eb' ]},
+          { name: 'Insen - G', notes: [ 'G', 'Ab', 'C', 'D', 'Fb' ]},
+          { name: 'Hirajoshi - A', notes: [ 'A', 'Bb', 'D', 'E', 'Fb' ]},
+          { name: 'Hirajoshi - B', notes: [ 'B', 'Cb', 'E', 'F', 'Gb' ]},
+          { name: 'Hirajoshi - C', notes: [ 'C', 'Db', 'F', 'G', 'Ab' ]},
+          { name: 'Hirajoshi - D', notes: [ 'D', 'Eb', 'G', 'A', 'Bb' ]},
+          { name: 'Hirajoshi - E', notes: [ 'E', 'Fb', 'A', 'B', 'Cb' ]},
+          { name: 'Hirajoshi - F', notes: [ 'F', 'Gb', 'B', 'C', 'Db' ]},
+          { name: 'Hirajoshi - G', notes: [ 'G', 'Ab', 'C', 'D', 'Eb' ]},
+          { name: 'Yo - A', notes: [ 'E', 'G', 'A', 'C', 'D' ]},
+          { name: 'Yo - B', notes: [ 'E', 'C', 'Eb', 'D', 'G' ]},
+          { name: 'Yo - C', notes: [ 'G', 'A', 'C', 'D', 'E' ]},
+          { name: 'Yo - D', notes: [ 'A', 'C', 'D', 'E', 'G' ]},
+          { name: 'Yo - E', notes: [ 'C', 'D', 'E', 'G', 'A' ]},
+          { name: 'Yo - F', notes: [ 'E', 'C', 'Eb', 'D', 'G' ]},
+          { name: 'Yo - G', notes: [ 'D', 'E', 'G', 'A', 'C' ]},
+        ],
+        scaleCollapsed: false,
         hueConfig: {
           api: {},
           lightState: {},

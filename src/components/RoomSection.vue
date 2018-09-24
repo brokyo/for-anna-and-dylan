@@ -1,9 +1,3 @@
-<!-- TODO 
-- Config Presets
-- Note Spacing
-
-
--->
 <template>
   <div id="section">
     <h2>Section</h2>
