@@ -1,6 +1,16 @@
+<!-- TODO 
+- Config Presets
+- Note Spacing
+
+
+-->
 <template>
   <div id="section">
     <h2>Section</h2>
+      <label>Preset</label>
+      <select v-model="presets.active" @change="newPreset">
+        <option v-for="preset in presets.options" :value="preset">{{preset.name}}</option>
+      </select>
       <pre id="currentEvent">
         {{waveMeta.activeEvent}}
       </pre>
@@ -244,11 +254,21 @@
   // Useful number generation methods
   import math from '@/mixins/math.js'
 
+  // Presets
+  import lead from '@/configs/forrooms/lead.js'
+  import left from '@/configs/forrooms/left.js'
+  import right from '@/configs/forrooms/right.js'
+
+
   export default {    
     props: ['Tone', 'scale', 'hueConfig', 'lightId'],
     mixins: [math],
     data() {
       return {
+        presets: {
+          options: [lead, left, right],
+          active: {}
+        },
         waveMeta: {
           audioActive: true,
           activeEvent: {}
@@ -324,7 +344,6 @@
       'timbreConfig.synthConfig.oscillator.partials': {
         handler(newConfig) {
           this.toneChain.synth.set({oscillator: {partials: newConfig}})
-          console.log(newConfig)
         },
         deep: true
       }
@@ -448,6 +467,12 @@
         this.Tone.Transport.scheduleOnce(time => {
           this.waveMeta.activeEvent = {}
         }, `+${String(eventParams.eventDuration)}`)
+      },
+      // Config
+      newPreset() {
+        this.timbreConfig = this.presets.active.timbreConfig
+        this.eventConfig = this.presets.active.eventConfig
+        this.waveConfig = this.presets.active.waveConfig
       },
       // Utilities
       copyCode() {
