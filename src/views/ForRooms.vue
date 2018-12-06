@@ -108,6 +108,11 @@
       :Tone="Tone"
       :config="roomConfig.reverb"
     ></reverb-config-component>
+    <chorus-config-component
+      ref="chorus"
+      :Tone="Tone"
+      :config="roomConfig.chorus"
+    ></chorus-config-component>
     <full-eq 
       ref="fullEq"
       :Tone="Tone"
@@ -122,12 +127,14 @@
   // Tone Nodes
   import RoomSection from '@/components/RoomSection'
   import reverbConfigComponent from '@/components/effectControllers/reverb';
+  import chorusConfigComponent from '@/components/effectControllers/chorus'
   import fullEQ from '@/components/effectControllers/fulleq'
 
   export default {
     components: {
       'room-section': RoomSection,
       'reverb-config-component': reverbConfigComponent,
+      'chorus-config-component': chorusConfigComponent,
       'full-eq': fullEQ
     },
     data() {
@@ -187,6 +194,15 @@
           reverb: {
             roomSize: 0.9, 
             dampening: 1572 
+          },
+          chorus: {
+            wet: 0.6,
+            frequency: 1.5,
+            delayTime: 3.5,
+            depth: 0.7,
+            feedback: 0.15,
+            type: 'sine',
+            spread: 180,
           }
         }
       }
@@ -210,6 +226,7 @@
         this.roomConfig.in = new Tone.Gain()
         this.roomConfig.in.chain(
           this.$refs.reverb.node,
+          this.$refs.chorus.node,
           this.$refs.fullEq.lineIn,
         )
 
