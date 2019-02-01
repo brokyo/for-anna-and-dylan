@@ -1,5 +1,6 @@
 <template>
   <div>
+    //a change
     <div id="control-buttons">
       <button @click="startWaves">Start Waves</button>
       <button @click="stopWaves">Stop Waves</button>
